@@ -1,0 +1,105 @@
+[12-Feb-2026 16:13:14 UTC] PHP Warning:  require_once(../config.php): Failed to open stream: No such file or directory in /home/studiok3/pramana.web.id/autoyu/index.php on line 9
+[12-Feb-2026 16:13:14 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '../config.php' (include_path='.:/opt/alt/php82/usr/share/pear:/opt/alt/php82/usr/share/php:/usr/share/pear:/usr/share/php') in /home/studiok3/pramana.web.id/autoyu/index.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/studiok3/pramana.web.id/autoyu/index.php on line 9
+[12-Feb-2026 16:13:15 UTC] PHP Warning:  require_once(../config.php): Failed to open stream: No such file or directory in /home/studiok3/pramana.web.id/autoyu/index.php on line 9
+[12-Feb-2026 16:13:15 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '../config.php' (include_path='.:/opt/alt/php82/usr/share/pear:/opt/alt/php82/usr/share/php:/usr/share/pear:/usr/share/php') in /home/studiok3/pramana.web.id/autoyu/index.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/studiok3/pramana.web.id/autoyu/index.php on line 9
+[12-Feb-2026 16:13:40 UTC] PHP Warning:  require_once(../config.php): Failed to open stream: No such file or directory in /home/studiok3/pramana.web.id/autoyu/index.php on line 9
+[12-Feb-2026 16:13:40 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '../config.php' (include_path='.:/opt/alt/php82/usr/share/pear:/opt/alt/php82/usr/share/php:/usr/share/pear:/usr/share/php') in /home/studiok3/pramana.web.id/autoyu/index.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/studiok3/pramana.web.id/autoyu/index.php on line 9
+[12-Feb-2026 16:13:41 UTC] PHP Warning:  require_once(../config.php): Failed to open stream: No such file or directory in /home/studiok3/pramana.web.id/autoyu/index.php on line 9
+[12-Feb-2026 16:13:41 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '../config.php' (include_path='.:/opt/alt/php82/usr/share/pear:/opt/alt/php82/usr/share/php:/usr/share/pear:/usr/share/php') in /home/studiok3/pramana.web.id/autoyu/index.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/studiok3/pramana.web.id/autoyu/index.php on line 9
+[12-Feb-2026 16:13:41 UTC] PHP Warning:  require_once(../config.php): Failed to open stream: No such file or directory in /home/studiok3/pramana.web.id/autoyu/index.php on line 9
+[12-Feb-2026 16:13:41 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '../config.php' (include_path='.:/opt/alt/php82/usr/share/pear:/opt/alt/php82/usr/share/php:/usr/share/pear:/usr/share/php') in /home/studiok3/pramana.web.id/autoyu/index.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/studiok3/pramana.web.id/autoyu/index.php on line 9
+[12-Feb-2026 16:13:42 UTC] PHP Warning:  require_once(../config.php): Failed to open stream: No such file or directory in /home/studiok3/pramana.web.id/autoyu/index.php on line 9
+[12-Feb-2026 16:13:42 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '../config.php' (include_path='.:/opt/alt/php82/usr/share/pear:/opt/alt/php82/usr/share/php:/usr/share/pear:/usr/share/php') in /home/studiok3/pramana.web.id/autoyu/index.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/studiok3/pramana.web.id/autoyu/index.php on line 9
+[12-Feb-2026 16:13:42 UTC] PHP Warning:  require_once(../config.php): Failed to open stream: No such file or directory in /home/studiok3/pramana.web.id/autoyu/index.php on line 9
+[12-Feb-2026 16:13:42 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '../config.php' (include_path='.:/opt/alt/php82/usr/share/pear:/opt/alt/php82/usr/share/php:/usr/share/pear:/usr/share/php') in /home/studiok3/pramana.web.id/autoyu/index.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/studiok3/pramana.web.id/autoyu/index.php on line 9
+[12-Feb-2026 16:13:42 UTC] PHP Warning:  require_once(../config.php): Failed to open stream: No such file or directory in /home/studiok3/pramana.web.id/autoyu/index.php on line 9
+[12-Feb-2026 16:13:42 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '../config.php' (include_path='.:/opt/alt/php82/usr/share/pear:/opt/alt/php82/usr/share/php:/usr/share/pear:/usr/share/php') in /home/studiok3/pramana.web.id/autoyu/index.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/studiok3/pramana.web.id/autoyu/index.php on line 9
+[12-Feb-2026 16:13:42 UTC] PHP Warning:  require_once(../config.php): Failed to open stream: No such file or directory in /home/studiok3/pramana.web.id/autoyu/index.php on line 9
+[12-Feb-2026 16:13:42 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '../config.php' (include_path='.:/opt/alt/php82/usr/share/pear:/opt/alt/php82/usr/share/php:/usr/share/pear:/usr/share/php') in /home/studiok3/pramana.web.id/autoyu/index.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/studiok3/pramana.web.id/autoyu/index.php on line 9
+[12-Feb-2026 16:13:42 UTC] PHP Warning:  require_once(../config.php): Failed to open stream: No such file or directory in /home/studiok3/pramana.web.id/autoyu/index.php on line 9
+[12-Feb-2026 16:13:42 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '../config.php' (include_path='.:/opt/alt/php82/usr/share/pear:/opt/alt/php82/usr/share/php:/usr/share/pear:/usr/share/php') in /home/studiok3/pramana.web.id/autoyu/index.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/studiok3/pramana.web.id/autoyu/index.php on line 9
+[12-Feb-2026 16:13:43 UTC] PHP Warning:  require_once(../config.php): Failed to open stream: No such file or directory in /home/studiok3/pramana.web.id/autoyu/index.php on line 9
+[12-Feb-2026 16:13:43 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '../config.php' (include_path='.:/opt/alt/php82/usr/share/pear:/opt/alt/php82/usr/share/php:/usr/share/pear:/usr/share/php') in /home/studiok3/pramana.web.id/autoyu/index.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/studiok3/pramana.web.id/autoyu/index.php on line 9
+[12-Feb-2026 16:13:43 UTC] PHP Warning:  require_once(../config.php): Failed to open stream: No such file or directory in /home/studiok3/pramana.web.id/autoyu/index.php on line 9
+[12-Feb-2026 16:13:43 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '../config.php' (include_path='.:/opt/alt/php82/usr/share/pear:/opt/alt/php82/usr/share/php:/usr/share/pear:/usr/share/php') in /home/studiok3/pramana.web.id/autoyu/index.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/studiok3/pramana.web.id/autoyu/index.php on line 9
+[12-Feb-2026 16:16:38 UTC] PHP Warning:  require_once(../config.php): Failed to open stream: No such file or directory in /home/studiok3/pramana.web.id/autoyu/index.php on line 9
+[12-Feb-2026 16:16:38 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '../config.php' (include_path='.:/opt/alt/php82/usr/share/pear:/opt/alt/php82/usr/share/php:/usr/share/pear:/usr/share/php') in /home/studiok3/pramana.web.id/autoyu/index.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/studiok3/pramana.web.id/autoyu/index.php on line 9
+[12-Feb-2026 16:16:38 UTC] PHP Warning:  require_once(../config.php): Failed to open stream: No such file or directory in /home/studiok3/pramana.web.id/autoyu/index.php on line 9
+[12-Feb-2026 16:16:38 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '../config.php' (include_path='.:/opt/alt/php82/usr/share/pear:/opt/alt/php82/usr/share/php:/usr/share/pear:/usr/share/php') in /home/studiok3/pramana.web.id/autoyu/index.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/studiok3/pramana.web.id/autoyu/index.php on line 9
+[12-Feb-2026 16:16:39 UTC] PHP Warning:  require_once(../config.php): Failed to open stream: No such file or directory in /home/studiok3/pramana.web.id/autoyu/index.php on line 9
+[12-Feb-2026 16:16:39 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '../config.php' (include_path='.:/opt/alt/php82/usr/share/pear:/opt/alt/php82/usr/share/php:/usr/share/pear:/usr/share/php') in /home/studiok3/pramana.web.id/autoyu/index.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/studiok3/pramana.web.id/autoyu/index.php on line 9
+[12-Feb-2026 16:16:39 UTC] PHP Warning:  require_once(../config.php): Failed to open stream: No such file or directory in /home/studiok3/pramana.web.id/autoyu/index.php on line 9
+[12-Feb-2026 16:16:39 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '../config.php' (include_path='.:/opt/alt/php82/usr/share/pear:/opt/alt/php82/usr/share/php:/usr/share/pear:/usr/share/php') in /home/studiok3/pramana.web.id/autoyu/index.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/studiok3/pramana.web.id/autoyu/index.php on line 9
+[12-Feb-2026 16:16:39 UTC] PHP Warning:  require_once(../config.php): Failed to open stream: No such file or directory in /home/studiok3/pramana.web.id/autoyu/index.php on line 9
+[12-Feb-2026 16:16:39 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '../config.php' (include_path='.:/opt/alt/php82/usr/share/pear:/opt/alt/php82/usr/share/php:/usr/share/pear:/usr/share/php') in /home/studiok3/pramana.web.id/autoyu/index.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/studiok3/pramana.web.id/autoyu/index.php on line 9
+[12-Feb-2026 16:16:39 UTC] PHP Warning:  require_once(../config.php): Failed to open stream: No such file or directory in /home/studiok3/pramana.web.id/autoyu/index.php on line 9
+[12-Feb-2026 16:16:39 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '../config.php' (include_path='.:/opt/alt/php82/usr/share/pear:/opt/alt/php82/usr/share/php:/usr/share/pear:/usr/share/php') in /home/studiok3/pramana.web.id/autoyu/index.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/studiok3/pramana.web.id/autoyu/index.php on line 9
+[12-Feb-2026 16:16:39 UTC] PHP Warning:  require_once(../config.php): Failed to open stream: No such file or directory in /home/studiok3/pramana.web.id/autoyu/index.php on line 9
+[12-Feb-2026 16:16:39 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '../config.php' (include_path='.:/opt/alt/php82/usr/share/pear:/opt/alt/php82/usr/share/php:/usr/share/pear:/usr/share/php') in /home/studiok3/pramana.web.id/autoyu/index.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/studiok3/pramana.web.id/autoyu/index.php on line 9
+[12-Feb-2026 16:16:40 UTC] PHP Warning:  require_once(../config.php): Failed to open stream: No such file or directory in /home/studiok3/pramana.web.id/autoyu/index.php on line 9
+[12-Feb-2026 16:16:40 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '../config.php' (include_path='.:/opt/alt/php82/usr/share/pear:/opt/alt/php82/usr/share/php:/usr/share/pear:/usr/share/php') in /home/studiok3/pramana.web.id/autoyu/index.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/studiok3/pramana.web.id/autoyu/index.php on line 9
+[12-Feb-2026 16:20:42 UTC] PHP Warning:  require_once(../config.php): Failed to open stream: No such file or directory in /home/studiok3/pramana.web.id/autoyu/index.php on line 9
+[12-Feb-2026 16:20:42 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '../config.php' (include_path='.:/opt/alt/php82/usr/share/pear:/opt/alt/php82/usr/share/php:/usr/share/pear:/usr/share/php') in /home/studiok3/pramana.web.id/autoyu/index.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/studiok3/pramana.web.id/autoyu/index.php on line 9

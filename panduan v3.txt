@@ -1,0 +1,640 @@
+===============================================================================
+PANDUAN PENGGUNAAN AUTOYU V3 (PRODUK/APLIKASI) - EDISI EVENT FOTOGRAFER
+===============================================================================
+Versi Panduan: V3 | Fokus Utama: Event lari/marathon/sepeda dan kerja volume besar
+Catatan: Dokumen ini disusun berdasarkan fitur yang memang tersedia di aplikasi.
+
+===============================================================================
+1. RINGKASAN PRODUK
+===============================================================================
+Apa fungsi aplikasi?
+- AutoYu V3 adalah aplikasi asistensi upload otomatis ke Fotoyu untuk FOTO/VIDEO,
+  dibuat agar fotografer event bisa unggah ribuan file tanpa klik satu-per-satu.
+
+Target pengguna
+- Fotografer event (lari/marathon/sepeda), tim event, operator upload, admin konten.
+
+Masalah yang diselesaikan
+- Upload manual memakan waktu, rawan duplikat, rawan tertinggal saat internet putus,
+  dan menyulitkan jika file tersebar di banyak folder SD Card.
+
+===============================================================================
+2. DAFTAR SEMUA FITUR (RINGKAS)
+===============================================================================
+| Nama Fitur | Fungsi | Untuk Siapa | Benefit |
+|---|---|---|---|
+| Aktivasi & Lisensi | Cek lisensi sebelum & saat proses berjalan | Semua user | Aplikasi aman, lisensi valid |
+| Manajemen Akun | Simpan banyak akun (Pro), 1 akun (Lite) | Tim event | Ganti akun cepat tanpa ribet |
+| Login Otomatis Terdeteksi | Deteksi login saat halaman upload sudah siap | Semua user | Tidak perlu setting teknis |
+| Mode Upload Foto/Video | Pilih tipe konten yang diunggah | Pro | Bisa upload foto maupun video |
+| Mode Foto (Lite) | Mode foto dikunci untuk stabilitas | Lite | UI lebih simpel dan stabil |
+| Sumber Folder Lokal | Pilih folder di komputer | Semua user | Upload dari hasil copy (lebih stabil) |
+| Sumber SD/USB + Pilih Cara Kerja | Mode FULL (baru, aman) vs Mode Folder (lama) | Event (SD Card) | Bisa langsung dari SD, pilihan aman/cepat |
+| Full Scan Rekursif | Baca folder + subfolder otomatis | Semua user | Tidak perlu gabung file dulu |
+| Tracker Anti Duplikat | Catat status per file agar tidak upload dua kali | Semua user | Hemat kuota, anti ganda |
+| Read-Only SD (Mode FULL baru) | File SD tidak dipindah/diubah | Event (SD Card) | Aman untuk kartu memori |
+| processed/failed (Mode Folder lama) | Pindah file sukses/gagal ke folder hasil | Pro (folder biasa) | Folder rapi, gampang audit |
+| Lanjutkan Sisa Gagal | Upload ulang hanya file yang gagal/pending | Semua user | Recovery cepat saat internet putus |
+| Mode Auto (AI Optimized) | Hitung TAB & batch optimal otomatis | Pro | Setelan cepat sesuai spek PC |
+| Mode Manual | Atur TAB & batch sendiri | Pro | Kontrol penuh sesuai kebiasaan |
+| Limit Proteksi | Batas 1.000.000 file (Mode Auto) & video max 25/tab | Semua user | Stabil, mengurangi crash |
+| Metadata Harga | Isi harga konten | Pro/Lite | Konsisten untuk event |
+| Metadata Deskripsi | Isi deskripsi konten | Pro/Lite | Standar informasi event |
+| FotoTree Realtime (Pro) | Cari/isi FotoTree realtime | Pro | Struktur rapi di Fotoyu |
+| Lokasi Realtime | Isi lokasi, dicari realtime di halaman Fotoyu | Pro/Lite | Minim salah input lokasi |
+| Browser Internal (Portable) | Jalankan Chromium internal, fallback Chrome/Edge | Semua user | Tidak perlu instal manual |
+| Update Checker | Notifikasi update & buka link download | Semua user | Tidak ketinggalan versi |
+| Log, Progress, ETA, Sound | Log warna, progress, perkiraan selesai, bunyi selesai | Semua user | Operator mudah memantau |
+| Panduan & Support Button | Buka halaman panduan & WhatsApp support | Semua user | Bantuan cepat tanpa cari link |
+
+===============================================================================
+3. PENJELASAN DETAIL TIAP FITUR
+===============================================================================
+Di bawah ini setiap fitur dijelaskan dengan: Fungsi, Cara Pakai, Use Case, Kapan,
+Keuntungan, Tips, Kendala, Solusi.
+
+-------------------------------------------------------------------------------
+3.1 Aktivasi & Lisensi
+-------------------------------------------------------------------------------
+Fungsi
+- Memastikan aplikasi hanya berjalan saat lisensi valid dan masih aktif.
+
+Cara Menggunakan (Step-by-step)
+1) Buka aplikasi.
+2) Perhatikan status lisensi di header (atas).
+3) Jika diminta update persetujuan/aktivasi, klik ikon 🔑 untuk manajemen lisensi.
+
+Use Case (Nyata)
+- Operator event memakai laptop baru: lisensi harus diverifikasi dulu sebelum mulai upload.
+
+Kapan Digunakan
+- Setiap kali membuka aplikasi dan saat proses upload berjalan.
+
+Keuntungan
+- Mengurangi risiko error karena status lisensi tidak jelas.
+
+Tips & Best Practice
+- Pastikan internet stabil saat pertama kali membuka aplikasi (untuk verifikasi lisensi).
+
+Kendala Umum
+- “Lisensi Tidak Aktif” / “Perlu Update Persetujuan”.
+
+Solusi
+- Klik ikon 🔑, ikuti instruksi aktivasi/penyetujuan, lalu restart aplikasi.
+
+-------------------------------------------------------------------------------
+3.2 Manajemen Akun (Tambah/Hapus/Ganti Akun)
+-------------------------------------------------------------------------------
+Fungsi
+- Menyimpan akun Fotoyu agar bisa dipakai berulang tanpa setup ulang setiap event.
+
+Cara Menggunakan
+1) Klik tombol “Tambah Akun”.
+2) Browser akan terbuka untuk login.
+3) Setelah login terdeteksi, akun tersimpan dan bisa dipilih dari dropdown akun.
+
+Use Case
+- Tim event pegang 2 akun Fotoyu (misal event pagi & event sore), tinggal ganti akun dari dropdown.
+
+Kapan Digunakan
+- Saat pertama kali menggunakan akun baru atau saat pindah akun.
+
+Keuntungan
+- Setup akun sekali, dipakai berkali-kali.
+
+Tips
+- Beri nama akun jelas (misal: “EVENT_LARI_MEI”, “TIM_A”).
+
+Kendala Umum
+- Akun belum dipilih.
+
+Solusi
+- Pilih dari dropdown akun atau tambah akun dulu.
+
+Catatan Lite
+- Lite dibatasi 1 akun aktif, tombol “Ganti Akun” dipakai untuk mengganti.
+
+-------------------------------------------------------------------------------
+3.3 Login Otomatis Terdeteksi
+-------------------------------------------------------------------------------
+Fungsi
+- Saat Anda login di browser, aplikasi akan mendeteksi bahwa halaman upload sudah siap.
+
+Cara Menggunakan
+1) Klik “Jalankan Otomasi”.
+2) Jika belum login, lakukan login manual di browser yang terbuka.
+3) Tunggu log “Login terdeteksi otomatis!” lalu proses lanjut.
+
+Use Case
+- Operator baru pertama kali pakai akun event: cukup login sekali, berikutnya lebih cepat.
+
+Kapan Digunakan
+- Saat akun belum punya sesi login di komputer tersebut.
+
+Keuntungan
+- Minim langkah teknis, tidak perlu setting cookie.
+
+Kendala Umum
+- Login tidak terdeteksi.
+
+Solusi
+- Pastikan Anda benar-benar berada di halaman https://www.fotoyu.com/upload dan elemen upload sudah muncul, lalu tunggu beberapa detik.
+
+-------------------------------------------------------------------------------
+3.4 Mode Upload Foto / Video (Pro)
+-------------------------------------------------------------------------------
+Fungsi
+- Memilih apakah yang diunggah foto atau video.
+
+Cara Menggunakan
+1) Di “MODE UNGGAHAN”, pilih 📷 FOTO atau 🎥 VIDEO.
+2) Pilih folder/drive sumber.
+3) Atur TAB & batch (Mode Auto/Manual).
+4) Klik “Jalankan Otomasi”.
+
+Use Case
+- Event lari biasanya foto; event tertentu ada video highlight: pilih VIDEO.
+
+Kapan Digunakan
+- Sebelum mulai proses upload.
+
+Keuntungan
+- Flow otomatis menyesuaikan tipe file yang dipilih.
+
+Tips
+- Untuk video, aplikasi membatasi 25 video/tab agar stabil.
+
+Kendala Umum
+- Video gagal karena batch terlalu besar.
+
+Solusi
+- Turunkan batch video, gunakan Mode Auto agar batas 25/tab otomatis.
+
+Catatan Lite
+- Lite hanya mendukung FOTO (mode dikunci).
+
+-------------------------------------------------------------------------------
+3.5 Pilih Sumber File: Folder Lokal vs SD/USB (dengan “Pilih Cara Kerja”)
+-------------------------------------------------------------------------------
+Nama Fitur
+- 📁 Folder Lokal (Komputer)
+- 🔌 Kartu SD / USB / Flashdisk
+- ⚙️ Pilih Cara Kerja (hanya muncul jika SD dipilih):
+  1) Mode FULL (Baru: File Tetap di Tempat - AMAN)
+  2) Mode Folder (Lama: File Dipindah ke 'processed')
+
+Fungsi
+- Menentukan dari mana file diambil dan apakah file akan dipindahkan setelah upload.
+
+Cara Menggunakan (Step-by-step)
+1) Pilih sumber:
+   - Folder Lokal: untuk file yang sudah Anda copy ke laptop.
+   - SD/USB: untuk upload langsung dari card reader.
+2) Jika pilih SD/USB, pilih “Cara Kerja”:
+   - Mode FULL (Baru): file di SD tidak dipindah (read-only).
+   - Mode Folder (Lama): file bisa dipindah ke processed/failed (hati-hati untuk SD).
+3) Klik “Pilih Folder / Drive”, lalu pilih:
+   - Folder: misal D:\\EVENT_LARI\\RAW\\
+   - Drive SD: misal E:\\
+
+Use Case (Nyata)
+- Event lari 8.000 foto, laptop storage terbatas: pilih SD/USB + Mode FULL agar tidak perlu copy ke laptop.
+
+Kapan Digunakan
+- Sebelum mulai upload.
+
+Keuntungan
+- Fleksibel: bisa kerja dari SD langsung atau dari folder lokal.
+
+Tips & Best Practice
+- Untuk event: gunakan SD/USB + Mode FULL (Baru) agar SD aman.
+- Kalau mau folder rapi otomatis: copy dulu ke laptop, lalu pakai Folder Lokal.
+
+Kendala Umum
+- Salah pilih drive/folder, file terbaca 0.
+
+Solusi
+- Pastikan Anda memilih drive/folder yang benar, dan file berekstensi .jpg/.jpeg/.png (foto) atau .mp4/.mov (video).
+
+-------------------------------------------------------------------------------
+3.6 Full Scan Rekursif (Folder & Subfolder)
+-------------------------------------------------------------------------------
+Fungsi
+- Aplikasi membaca folder beserta subfolder secara otomatis (tidak cuma 1 folder).
+
+Cara Menggunakan
+- Cukup pilih folder/drive sumber, aplikasi akan menyisir subfolder di dalamnya.
+
+Use Case
+- Di SD Card ada DCIM\\100CANON, DCIM\\101CANON, dst: AutoYu tetap menemukan semuanya.
+
+Kapan Digunakan
+- Saat file tersebar di beberapa folder.
+
+Keuntungan
+- Tidak perlu gabung file manual ke 1 folder.
+
+Tips
+- Jangan taruh file tambahan di folder processed/failed (agar tidak ikut terscan ulang).
+
+Kendala
+- Folder sangat besar, perhitungan bisa butuh waktu.
+
+Solusi
+- Gunakan Mode Auto dan tunggu hitungan file selesai tampil.
+
+-------------------------------------------------------------------------------
+3.7 Tracker Anti Duplikat (Unique ID) + Cara Kerja “SKIP”
+-------------------------------------------------------------------------------
+Fungsi
+- Mencatat status tiap file agar:
+  1) file yang sudah sukses tidak di-upload ulang,
+  2) file gagal/pending bisa dilanjutkan.
+
+Cara Kerja (Dijelaskan Awam)
+- Setiap file dibuatkan “ID” dari:
+  Nama relatif + Ukuran (Byte) + Tanggal/Jam modifikasi file (mtime).
+  Ini membuat file tetap bisa dikenali meski dipindahkan ke processed/failed.
+
+Cara Menggunakan
+- Anda tidak perlu menyalakan apa pun; tracker berjalan otomatis.
+
+Use Case
+- Internet putus: Anda jalankan lagi, AutoYu otomatis mengabaikan file yang sudah sukses.
+
+Kapan Digunakan
+- Selalu, terutama event volume besar.
+
+Keuntungan
+- Hemat kuota, anti upload dobel, anti “ketinggalan”.
+
+Tips
+- Jangan rename/mengubah timestamp file setelah mulai upload (agar ID tidak berubah).
+
+Kendala Umum
+- User merasa “kok banyak yang dilewati”.
+
+Solusi
+- Cek progress “Duplikat” dan log “Mengabaikan file yang sudah sukses”; itu artinya file sudah pernah sukses diunggah.
+
+-------------------------------------------------------------------------------
+3.8 Read-Only SD (Mode FULL baru)
+-------------------------------------------------------------------------------
+Fungsi
+- Saat Mode FULL baru dipilih, aplikasi tidak memindahkan file SD (aman).
+- Riwayat upload disimpan di komputer, bukan di SD.
+
+Cara Menggunakan
+1) Pilih SD/USB.
+2) Pilih “Mode FULL (Baru: File Tetap di Tempat - AMAN)”.
+3) Pilih drive SD (misal E:\\).
+4) Jalankan otomasi.
+
+Use Case
+- Event lari: setelah upload, SD tetap utuh untuk backup.
+
+Kapan Digunakan
+- Default paling aman untuk SD Card.
+
+Keuntungan
+- Tidak ada risiko file berpindah/hilang di kartu.
+
+Kendala Umum
+- User mencari folder processed/failed di SD tapi tidak ada.
+
+Solusi
+- Mode FULL memang tidak memindahkan file; gunakan “LANJUTKAN SISA GAGAL” untuk melanjutkan file gagal.
+
+-------------------------------------------------------------------------------
+3.9 processed/failed (Mode Folder lama) + Perbedaan Pro vs Lite
+-------------------------------------------------------------------------------
+Fungsi
+- Merapikan file otomatis:
+  - sukses -> folder “processed”
+  - gagal -> folder “failed”
+
+Cara Menggunakan
+1) Gunakan sumber Folder Lokal, atau SD/USB tapi pilih “Mode Folder (Lama)”.
+2) Jalankan otomasi.
+3) Setelah selesai, cek folder processed/failed di lokasi file.
+
+Use Case
+- Operator ingin audit cepat: yang belum terupload pasti ada di failed.
+
+Kapan Digunakan
+- Saat Anda ingin folder rapi otomatis, terutama jika file sudah ada di laptop.
+
+Keuntungan
+- Memudahkan pemilahan file sukses vs gagal.
+
+Tips
+- Untuk SD Card, rekomendasi tetap Mode FULL baru (read-only).
+
+Kendala Umum
+- User kaget file “hilang” dari folder utama.
+
+Solusi
+- File dipindahkan ke subfolder “processed”; cek folder tersebut.
+
+Perbedaan Lite
+- Lite tidak memindahkan file yang gagal ke “failed” (file gagal tetap di folder asal agar mudah diulang).
+
+-------------------------------------------------------------------------------
+3.10 Lanjutkan Sisa Gagal (Retry Failed Only)
+-------------------------------------------------------------------------------
+Fungsi
+- Mengupload ulang hanya file yang gagal/pending, bukan mengulang semuanya.
+
+Cara Menggunakan
+1) Setelah proses selesai tapi ada gagal, klik tombol “LANJUTKAN SISA GAGAL”.
+2) Aplikasi akan mencari daftar file gagal/pending:
+   - Mode FULL SD: dari tracker di komputer.
+   - Mode folder: gabungan folder failed + tracker.
+3) Klik “Jalankan Otomasi” untuk mengulang hanya yang gagal.
+
+Use Case
+- Internet putus 10 menit: Anda klik “LANJUTKAN SISA GAGAL”, selesai tanpa duplikat.
+
+Kapan Digunakan
+- Saat indikator “Gagal” tidak 0 atau proses berhenti di tengah.
+
+Keuntungan
+- Hemat waktu, hemat kuota, lebih pasti.
+
+Tips
+- Jangan pindahkan file manual sebelum klik “LANJUTKAN SISA GAGAL”.
+
+Kendala Umum
+- Tombol lanjutkan tidak muncul/tidak relevan.
+
+Solusi
+- Pastikan memang ada file gagal; jika tidak ada gagal, tombol tidak diperlukan.
+
+-------------------------------------------------------------------------------
+3.11 Mode Auto (AI Optimized) vs Mode Manual (TAB & Batch)
+-------------------------------------------------------------------------------
+Fungsi
+- Mengatur berapa TAB browser dan berapa file per TAB (batch) agar stabil.
+
+Mode Auto (Mode Auto = ON)
+- Aplikasi menghitung otomatis berdasarkan:
+  - jumlah file,
+  - RAM & CPU komputer,
+  - tipe file (foto/video).
+- Ada batas proteksi:
+  - batch foto maksimal 1500,
+  - batch video maksimal 25,
+  - tab maksimal 20.
+
+Mode Manual (Mode Auto = OFF)
+- Anda bebas set jumlah TAB dan batch sendiri.
+
+Cara Menggunakan
+1) Aktifkan/nonaktifkan checkbox “Mode Auto”.
+2) Jika Mode Auto aktif: biarkan sistem mengisi TAB & batch.
+3) Jika Mode Auto mati: atur TAB & batch sesuai kebutuhan.
+
+Use Case
+- Laptop i5 RAM 8GB, foto 6000: Mode Auto akan merekomendasikan setelan aman.
+
+Kapan Digunakan
+- Mode Auto: direkomendasikan untuk pemula dan operator event.
+- Mode Manual: untuk user yang sudah tahu batas laptop & jaringan.
+
+Keuntungan
+- Mode Auto mengurangi trial-error dan crash.
+
+Tips
+- Untuk event besar: mulai dari Mode Auto, lalu sesuaikan jika perlu.
+
+Kendala Umum
+- Tab terlalu banyak membuat laptop berat.
+
+Solusi
+- Turunkan jumlah TAB (misal <= 6) atau naikkan batch dengan wajar.
+
+-------------------------------------------------------------------------------
+3.12 Metadata: Harga, Deskripsi, FotoTree (Pro), Lokasi Realtime
+-------------------------------------------------------------------------------
+Fungsi
+- Mengisi metadata konten agar konsisten di Fotoyu.
+
+Cara Menggunakan
+1) Isi Harga.
+2) Isi Deskripsi.
+3) (Pro) FotoTree:
+   - ketik nama FotoTree, bisa pakai tombol LIVE untuk cari realtime.
+4) Lokasi:
+   - ketik lokasi event sesuai yang ada di halaman upload Fotoyu,
+   - centang “Gunakan Lokasi” jika ingin lokasi diisi otomatis saat upload.
+
+Use Case
+- Event “Marathon Kota X”: lokasi & harga sama untuk ribuan foto.
+
+Kapan Digunakan
+- Sebelum klik “Jalankan Otomasi”.
+
+Keuntungan
+- Konsistensi metadata, mengurangi salah input.
+
+Tips
+- Simpan settings per mode (foto vs video) karena aplikasi mengingat pengaturan per mode.
+
+Kendala Umum
+- Lokasi tidak ketemu.
+
+Solusi
+- Pastikan nama lokasi sama dengan yang tersedia di pilihan Fotoyu, coba ejaan lebih pendek.
+
+Catatan Lite
+- FotoTree dinonaktifkan (PRO ONLY), lokasi tetap tersedia.
+
+-------------------------------------------------------------------------------
+3.13 Browser Internal (Portable) + Fallback
+-------------------------------------------------------------------------------
+Fungsi
+- Aplikasi membawa Chromium internal supaya tidak perlu instal browser manual.
+- Jika internal tidak ditemukan, aplikasi mencoba Google Chrome lalu Microsoft Edge.
+
+Cara Menggunakan
+- Tidak ada setting khusus; fitur berjalan otomatis saat Anda klik “Jalankan Otomasi”.
+
+Use Case
+- Laptop event fresh install: AutoYu tetap bisa jalan karena browser internal.
+
+Kapan Digunakan
+- Selalu saat otomasi berjalan.
+
+Keuntungan
+- Setup cepat, lebih portable.
+
+Kendala Umum
+- “Browser internal gagal…”
+
+Solusi
+- Pastikan folder aplikasi tidak dipotong (jangan hapus folder _internal/browsers).
+- Jika internal tidak ada, pastikan Chrome atau Edge terinstal.
+
+-------------------------------------------------------------------------------
+3.14 Update Checker, Panduan, dan Support
+-------------------------------------------------------------------------------
+Fungsi
+- Update Checker: memberi notifikasi jika ada versi baru.
+- Panduan: membuka halaman panduan online.
+- Support: membuka WhatsApp admin.
+
+Cara Menggunakan
+- Update Checker muncul otomatis; jika ada update, klik “Yes” untuk membuka link download.
+- Klik tombol “📖 Panduan” untuk panduan online.
+- Klik tombol “💬 SUPPORT” untuk chat admin.
+
+Use Case
+- Ada perbaikan terbaru sebelum event besar: update dulu agar stabil.
+
+-------------------------------------------------------------------------------
+3.15 Monitoring Progress: Log, Progress Bar, ETA, dan Bunyi Selesai
+-------------------------------------------------------------------------------
+Fungsi
+- Menampilkan:
+  - total file,
+  - selesai/gagal/duplikat,
+  - progress bar,
+  - estimasi waktu selesai (ETA),
+  - log berwarna,
+  - notifikasi suara saat selesai (jika tersedia di OS).
+
+Cara Menggunakan
+1) Jalankan otomasi.
+2) Pantau panel progress dan log.
+3) Jika selesai, Anda akan melihat ringkasan dan (bila ada) bunyi notifikasi.
+
+Use Case
+- Operator tinggal memantau “Gagal” dan langsung klik “LANJUTKAN SISA GAGAL”.
+
+===============================================================================
+4. FAQ / QnA (MINIMAL 10)
+===============================================================================
+Q: Saya harus pilih “Folder Lokal” atau “SD/USB”?
+A: Jika storage laptop cukup dan ingin rapi processed/failed, pilih Folder Lokal; jika ingin cepat tanpa copy, pilih SD/USB + Mode FULL (Baru).
+
+Q: Apa bedanya “Mode FULL (Baru)” vs “Mode Folder (Lama)” saat sumber SD/USB?
+A: Mode FULL (Baru) read-only (file tidak dipindah); Mode Folder (Lama) bisa memindahkan file ke processed/failed (lebih berisiko untuk SD).
+
+Q: Kenapa file saya banyak “SKIP”?
+A: Karena tracker mendeteksi file itu sudah pernah sukses terupload (berdasarkan ID file: path relatif + size + mtime).
+
+Q: Internet putus, harus ulang dari nol?
+A: Tidak. Klik “LANJUTKAN SISA GAGAL” untuk mengulang yang gagal/pending saja.
+
+Q: Apakah AutoYu menghapus file saya?
+A: Tidak menghapus. Pada Mode FULL (Baru) SD: tidak memindah sama sekali; pada Mode Folder (Lama) Pro: file dipindah ke processed/failed.
+
+Q: Saya memilih SD Card tapi file “hilang” dari folder utama, kenapa?
+A: Anda kemungkinan memakai Mode Folder (Lama) sehingga file dipindah ke processed; gunakan Mode FULL (Baru) jika ingin SD aman.
+
+Q: Berapa setelan TAB & batch yang paling aman?
+A: Untuk pemula gunakan Mode Auto; untuk manual, mulai dari TAB 3–6 dan batch 200–600 (foto), video max 25/tab.
+
+Q: Kenapa video saya gagal?
+A: Umumnya karena batch video terlalu banyak atau koneksi tidak stabil; pakai Mode Auto dan pastikan video <= 25/tab.
+
+Q: Lokasi tidak terisi, padahal sudah saya ketik?
+A: Pastikan “Gunakan Lokasi” dicentang dan ejaan lokasi sama dengan pilihan yang tersedia di Fotoyu; coba gunakan nama lebih pendek.
+
+Q: Saya ingin ganti akun, bagaimana?
+A: Pilih akun dari dropdown atau klik “Tambah Akun”; di Lite gunakan tombol “Ganti Akun”.
+
+Q: Saya klik Stop, apakah aman?
+A: Aman. Tunggu sampai proses berhenti total sebelum mencabut SD Card atau menutup browser.
+
+===============================================================================
+5. TROUBLESHOOTING (ERROR UMUM)
+===============================================================================
+1) Folder konten tidak ditemukan
+- Penyebab: SD/USB belum terbaca, drive berubah, atau folder salah.
+- Dampak: Tidak bisa mulai.
+- Solusi cepat: Cabut-pasang card reader, pilih ulang “Pilih Folder / Drive”.
+- Hubungi support jika: drive terbaca di OS tapi aplikasi tetap tidak bisa akses.
+
+2) Tidak ada file ditemukan (0 file)
+- Penyebab: Salah pilih folder/drive atau tipe konten salah (FOTO/VIDEO).
+- Dampak: Tidak ada yang diupload.
+- Solusi cepat: Pastikan pilih FOTO untuk .jpg/.png atau VIDEO untuk .mp4/.mov.
+- Hubungi support jika: file ada tapi tetap 0.
+
+3) Lisensi tidak aktif / perlu update persetujuan
+- Penyebab: Lisensi belum diimpor, expired, atau perlu re-agreement.
+- Dampak: Engine tidak berjalan.
+- Solusi cepat: Klik ikon 🔑, lakukan manajemen lisensi, restart.
+- Hubungi support jika: status tidak jelas atau perangkat baru.
+
+4) Browser internal gagal / browser tidak ditemukan
+- Penyebab: Folder aplikasi tidak lengkap, browsers terhapus, atau environment bermasalah.
+- Dampak: Tidak bisa membuka halaman upload.
+- Solusi cepat: Pastikan folder aplikasi lengkap; jika perlu install Chrome/Edge sebagai fallback.
+- Hubungi support jika: selalu gagal di semua browser.
+
+5) Internet bermasalah / timeout / upload berhenti
+- Penyebab: WiFi drop, hotspot tidak stabil, VPN/antivirus mengganggu.
+- Dampak: Banyak file gagal.
+- Solusi cepat: Stabilkan internet, lalu klik “LANJUTKAN SISA GAGAL”.
+- Hubungi support jika: gagal terus meskipun internet sudah stabil.
+
+6) Batch terlalu besar / Tab terlalu banyak
+- Penyebab: Setelan manual terlalu agresif.
+- Dampak: Browser berat, crash, progress lambat.
+- Solusi cepat: Aktifkan Mode Auto atau turunkan batch/tab.
+- Hubungi support jika: butuh rekomendasi setelan untuk spek tertentu.
+
+===============================================================================
+6. PANDUAN CEPAT (QUICK START < 5 MENIT)
+===============================================================================
+1) Buka AutoYu V3.
+2) Klik “Tambah Akun”, login di browser sampai terdeteksi.
+3) Pilih tipe konten: FOTO (umum untuk event).
+4) Pilih sumber:
+   - SD/USB -> pilih “Mode FULL (Baru: AMAN)” -> pilih drive SD (misal E:\\)
+5) Aktifkan Mode Auto (rekomendasi).
+6) Isi Harga, Deskripsi, (opsional) Lokasi.
+7) Klik “Jalankan Otomasi”.
+8) Jika ada gagal: klik “LANJUTKAN SISA GAGAL”.
+
+===============================================================================
+7. GLOSSARY (ISTILAH)
+===============================================================================
+- TAB: Jendela/tab browser yang bekerja paralel untuk upload.
+- Batch: Jumlah file yang dimasukkan ke uploader per tab sekali jalan.
+- processed: Folder untuk file yang dianggap sukses (Mode Folder lama/Pro).
+- failed: Folder untuk file yang gagal (Mode Folder lama/Pro).
+- Read-only: Mode aman, file tidak dipindah/diubah (Mode FULL baru SD).
+- Tracker: File catatan status upload agar tidak duplikat dan bisa lanjutkan gagal.
+- Duplikat: File terdeteksi sudah pernah diupload sebelumnya.
+- ETA: Estimasi waktu selesai.
+- FotoTree: Struktur/penamaan pohon folder konten di Fotoyu (Pro).
+
+===============================================================================
+8. REKOMENDASI ALUR PENGGUNAAN
+===============================================================================
+Pemula (Paling Aman)
+1) SD/USB + Mode FULL (Baru)
+2) Mode Auto ON
+3) Upload FOTO
+4) Jika gagal: “LANJUTKAN SISA GAGAL”
+
+Menengah (Lebih Cepat)
+1) Copy ke folder lokal (opsional) jika mau rapi processed/failed
+2) Mode Auto ON lalu fine-tune TAB (3–6) bila perlu
+3) Isi metadata (Harga/Deskripsi/Lokasi)
+
+Expert (Kontrol Penuh)
+1) Mode Manual (Auto OFF)
+2) Atur TAB & batch sesuai spek (jaga agar tidak terlalu agresif)
+3) Pantau log, gunakan “LANJUTKAN SISA GAGAL” sebagai recovery
+
+===============================================================================
+Catatan Penting untuk Operator Event
+===============================================================================
+- Saat pakai SD Card, rekomendasi utama: SD/USB + Mode FULL (Baru: AMAN).
+- Jangan mencabut SD Card saat proses berjalan.
+- Jika internet putus, jangan panik: lanjutkan dengan “LANJUTKAN SISA GAGAL”.
+===============================================================================

@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Download AutoYu Pro</title>
+  <meta name="description" content="Halaman download resmi AutoYu Pro untuk pengguna berlisensi. Unduh versi Windows atau Mac sesuai perangkat Anda.">
+  <style>
+    :root {
+      --bg: #050816;
+      --bg-soft: #0b1020;
+      --accent: #a855f7;
+      --accent-soft: rgba(168, 85, 247, 0.18);
+      --accent-strong: #c4b5fd;
+      --text-main: #f9fafb;
+      --text-soft: #d1d5db;
+      --border-soft: #1f2937;
+      --radius-xl: 24px;
+      --radius-lg: 18px;
+      --radius-md: 14px;
+      --shadow-soft: 0 18px 40px rgba(15, 23, 42, 0.55);
+      --shadow-card: 0 16px 36px rgba(15, 23, 42, 0.65);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at top, rgba(129, 140, 248, 0.22) 0, transparent 45%),
+        radial-gradient(circle at bottom, rgba(168, 85, 247, 0.22) 0, transparent 55%),
+        #020617;
+      color: var(--text-main);
+      -webkit-font-smoothing: antialiased;
+      font-size: 15px;
+      line-height: 1.6;
+    }
+
+    a {
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .page {
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 20px 16px 32px;
+    }
+
+    .section {
+      margin-bottom: 24px;
+    }
+
+    .section-header {
+      margin-bottom: 14px;
+    }
+
+    .section-title {
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      margin-bottom: 4px;
+      color: #f9fafb;
+    }
+
+    .section-subtitle {
+      font-size: 14px;
+      color: var(--text-soft);
+    }
+
+    .download-header {
+      border-radius: var(--radius-xl);
+      padding: 20px 18px 18px;
+      background: radial-gradient(circle at top left, #4c1d95 0, #020617 60%);
+      box-shadow: var(--shadow-soft);
+      border: 1px solid rgba(55, 65, 81, 0.95);
+      margin-bottom: 20px;
+    }
+
+    .download-title {
+      font-size: 24px;
+      font-weight: 750;
+      letter-spacing: -0.035em;
+      margin-bottom: 6px;
+      color: #f9fafb;
+    }
+
+    .download-subtitle {
+      font-size: 14px;
+      color: #cbd5f5;
+      margin-bottom: 6px;
+    }
+
+    .download-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.9);
+      color: var(--accent-strong);
+      font-size: 11px;
+      border: 1px solid rgba(148, 163, 184, 0.9);
+      margin-top: 8px;
+    }
+
+    .card {
+      background: rgba(15, 23, 42, 0.95);
+      border-radius: var(--radius-lg);
+      border: 1px solid rgba(31, 41, 55, 0.95);
+      padding: 16px 15px;
+      box-shadow: var(--shadow-card);
+    }
+
+    .card + .card {
+      margin-top: 10px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      padding: 12px 16px;
+      border-radius: 999px;
+      border: 1px solid transparent;
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      cursor: pointer;
+      transition: background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease, transform 0.12s ease, border-color 0.18s ease;
+    }
+
+    .btn-icon {
+      width: 18px;
+      height: 18px;
+      margin-right: 8px;
+      flex-shrink: 0;
+    }
+
+    .btn-icon img {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #a855f7 0, #7c3aed 40%, #4c1d95 100%);
+      color: #f9fafb;
+      box-shadow: 0 18px 42px rgba(88, 28, 135, 0.9);
+      border-color: transparent;
+    }
+
+    .btn-primary:active {
+      transform: translateY(1px) scale(0.99);
+      box-shadow: 0 8px 20px rgba(22, 163, 74, 0.7);
+    }
+
+    .btn-outline {
+      background: rgba(15, 23, 42, 0.9);
+      color: #e5e7eb;
+      border-color: rgba(55, 65, 81, 0.9);
+      box-shadow: 0 12px 32px rgba(15, 23, 42, 0.95);
+    }
+
+    .download-card-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: #f9fafb;
+    }
+
+    .download-card-head {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+
+    .download-card-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+
+    .download-card-icon-mac {
+      width: 32px;
+      height: 32px;
+    }
+
+    .download-card-icon img {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .download-card-desc {
+      font-size: 13px;
+      color: var(--text-soft);
+      margin-bottom: 10px;
+    }
+
+    .download-notes-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #f9fafb;
+      margin-bottom: 6px;
+    }
+
+    .download-notes-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      font-size: 13px;
+      color: var(--text-soft);
+    }
+
+    .download-notes-list li::before {
+      content: "•";
+      margin-right: 6px;
+      color: var(--accent-strong);
+    }
+
+    .download-video {
+      margin-top: 10px;
+      margin-bottom: 16px;
+    }
+
+    .download-video-frame {
+      position: relative;
+      width: 100%;
+      border-radius: 14px;
+      overflow: hidden;
+      background: radial-gradient(circle at top, rgba(248, 250, 252, 0.12) 0, transparent 55%),
+        radial-gradient(circle at bottom, rgba(79, 70, 229, 0.6) 0, rgba(15, 23, 42, 0.98) 65%);
+      border: 1px solid rgba(55, 65, 81, 0.9);
+      box-shadow: 0 14px 32px rgba(15, 23, 42, 0.9);
+      padding-top: 56.25%;
+    }
+
+    .download-video-inner {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at center, rgba(15, 23, 42, 0.4) 0, rgba(15, 23, 42, 0.92) 70%);
+    }
+
+    .download-video-iframe {
+      width: 100%;
+      height: 100%;
+      border: 0;
+      display: block;
+    }
+
+    .download-video-play {
+      width: 52px;
+      height: 52px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, #a855f7 0, #7c3aed 45%, #4c1d95 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 14px 32px rgba(88, 28, 135, 0.9);
+      color: #f9fafb;
+      font-size: 22px;
+    }
+
+    .download-video-text-main {
+      font-size: 13px;
+      font-weight: 600;
+      color: #f9fafb;
+      text-align: center;
+    }
+
+    .download-video-text-sub {
+      font-size: 11px;
+      color: var(--text-soft);
+      text-align: center;
+    }
+
+    .footer {
+      margin-top: 22px;
+      font-size: 11px;
+      color: #9ca3af;
+      text-align: center;
+    }
+
+    @media (min-width: 768px) {
+      .container {
+        padding: 32px 24px 40px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <main class="container">
+      <header class="download-header">
+        <div class="section-header">
+          <h1 class="download-title">AutoYu Pro</h1>
+          <p class="download-subtitle">Halaman Download Resmi</p>
+          <p class="section-subtitle">Khusus pengguna AutoYu Pro berlisensi.</p>
+          <span class="download-badge">Lisensi resmi diperlukan untuk menggunakan aplikasi ini.</span>
+        </div>
+      </header>
+
+      <section class="section">
+        <div class="card">
+          <p class="section-subtitle">
+            Terima kasih telah menggunakan AutoYu Pro.<br />
+            Silakan unduh versi sesuai perangkat Anda.<br />
+            Pastikan lisensi sudah aktif sebelum instalasi.
+          </p>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="card">
+          <div class="download-card-head">
+            <div class="download-card-icon">
+              <img
+                src="https://img.icons8.com/color/48/windows-10--v1.png"
+                alt="Windows"
+                loading="lazy"
+              />
+            </div>
+            <div class="download-card-title">Download untuk Windows</div>
+          </div>
+          <div class="download-card-desc">Versi resmi untuk perangkat Windows.</div>
+          <div class="download-video">
+            <div class="download-video-frame">
+              <div class="download-video-inner">
+                <iframe
+                  class="download-video-iframe"
+                  src="https://www.youtube.com/embed/qONGl79hcHg"
+                  title="Cara download dan membuka AutoYu di Windows"
+                  frameborder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowfullscreen
+                ></iframe>
+              </div>
+            </div>
+          </div>
+          <a
+            href="https://drive.google.com/file/d/1TAbua94ZbzUy5bALFg_LGw2flLiYLWJF/view?usp=sharing"
+            class="btn btn-primary"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <span class="btn-icon">
+              <img
+                src="https://img.icons8.com/color/48/google-drive--v1.png"
+                alt="Google Drive"
+                loading="lazy"
+              />
+            </span>
+            <span>Download Windows</span>
+          </a>
+        </div>
+        <div class="card">
+          <div class="download-card-head">
+            <div class="download-card-icon download-card-icon-mac">
+              <img
+                src="https://img.icons8.com/ios-filled/50/ffffff/mac-os.png"
+                alt="Mac OS"
+                loading="lazy"
+              />
+            </div>
+            <div class="download-card-title">Download untuk Mac</div>
+          </div>
+          <div class="download-card-desc">Versi resmi untuk perangkat Mac.</div>
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <a
+              href="https://drive.google.com/file/d/1Byq8X1Ng2wO6537df1xJMBfQudu1-Np7/view?usp=sharing"
+              class="btn btn-primary"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <span class="btn-icon">
+                <img
+                  src="https://img.icons8.com/color/48/google-drive--v1.png"
+                  alt="Google Drive"
+                  loading="lazy"
+                />
+              </span>
+              <span>Download Mac ver. M1–M4</span>
+            </a>
+            <a
+              href="https://drive.google.com/file/d/1kAUaxnV8HE8oVkSN7e9Vp2229_huXapK/view?usp=sharing"
+              class="btn btn-primary"
+            >
+              <span class="btn-icon">
+                <img
+                  src="https://img.icons8.com/color/48/google-drive--v1.png"
+                  alt="Google Drive"
+                  loading="lazy"
+                />
+              </span>
+              <span>Download Mac ver. INTEL</span>
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="card">
+          <div class="download-notes-title">Catatan Penting</div>
+          <ul class="download-notes-list">
+            <li>Installer hanya untuk pengguna berlisensi.</li>
+            <li>1 lisensi untuk 1 perangkat.</li>
+            <li>Jika ganti perangkat, hubungi admin.</li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="card">
+          <div class="section-title" style="font-size: 16px; margin-bottom: 4px;">Bantuan</div>
+          <p class="section-subtitle" style="margin-bottom: 10px;">
+            Jika mengalami kendala saat download atau instalasi, hubungi tim support AutoYu Pro.
+          </p>
+          <a
+            href="https://wa.me/6287739623456?text=Halo,%20saya%20mengalami%20kendala%20saat%20download/instalasi%20AutoYu%20Pro.%20Mohon%20bantuannya."
+            target="_blank"
+            rel="noopener noreferrer"
+            class="btn btn-outline"
+          >
+            Hubungi Support
+          </a>
+        </div>
+      </section>
+
+      <div class="footer">
+        © 2026 AutoYu Pro – Khusus Fotografer Pengguna Fotoyu
+      </div>
+    </main>
+  </div>
+</body>
+</html>

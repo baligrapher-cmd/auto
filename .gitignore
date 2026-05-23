@@ -1,0 +1,75 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+venv/
+.env
+.venv
+
+# PyInstaller
+*.manifest
+# *.spec (Hapus agar bisa diupload ke GitHub untuk Actions)
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# pyenv
+.python-version
+
+# celery staticfiles
+celerybeat-schedule
+
+# SageMath libraries
+*.sage.py
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+venv_arm/
+venv_intel/
+venv_x86/
+pw-browsers/
+dist_final/
+build/
+dist/
+*.dat
+*.pem
+*.spec
+!AutoYuPro.spec
+!AutoYuLite.spec

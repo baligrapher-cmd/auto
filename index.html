@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AutoYu V3 - Upload Kilat, FG Bisa Istirahat</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #818CF8;
+            --primary-dark: #6366F1;
+            --bg: #0F172A;
+            --card-bg: #1E293B;
+            --text: #F8FAFC;
+            --text-muted: #94A3B8;
+            --accent: #F59E0B;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* Hero Section */
+        header {
+            padding: 80px 0 40px;
+            text-align: center;
+            background: radial-gradient(circle at top, #1e293b 0%, #0f172a 100%);
+        }
+
+        .badge {
+            background: rgba(129, 140, 248, 0.1);
+            color: var(--primary);
+            padding: 8px 16px;
+            border-radius: 50px;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            display: inline-block;
+            border: 1px solid rgba(129, 140, 248, 0.2);
+        }
+
+        h1 {
+            font-size: 3.5rem;
+            margin-bottom: 20px;
+            background: linear-gradient(to right, #fff, var(--primary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            line-height: 1.2;
+        }
+
+        .hero-desc {
+            font-size: 1.2rem;
+            color: var(--text-muted);
+            max-width: 700px;
+            margin: 0 auto 40px;
+        }
+
+        .cta-button {
+            background: var(--primary);
+            color: white;
+            padding: 16px 32px;
+            border-radius: 12px;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 1.1rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 25px -5px rgba(99, 102, 241, 0.4);
+        }
+
+        .cta-button:hover {
+            transform: translateY(-3px);
+            background: var(--primary-dark);
+            box-shadow: 0 15px 30px -5px rgba(99, 102, 241, 0.5);
+        }
+
+        /* Video Placeholder */
+        .video-container {
+            margin-top: 60px;
+            background: var(--card-bg);
+            border-radius: 24px;
+            aspect-ratio: 16/9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        .video-placeholder {
+            text-align: center;
+        }
+
+        .play-icon {
+            font-size: 60px;
+            color: var(--primary);
+            margin-bottom: 15px;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .play-icon:hover {
+            transform: scale(1.1);
+        }
+
+        /* Features Section */
+        .section-title {
+            text-align: center;
+            margin: 100px 0 50px;
+        }
+
+        .section-title h2 {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+        }
+
+        .feature-card {
+            background: var(--card-bg);
+            padding: 35px;
+            border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.05);
+            transition: all 0.3s ease;
+        }
+
+        .feature-card:hover {
+            border-color: var(--primary);
+            transform: translateY(-5px);
+        }
+
+        .feature-icon {
+            font-size: 2rem;
+            color: var(--primary);
+            margin-bottom: 20px;
+        }
+
+        .feature-card h3 {
+            margin-bottom: 12px;
+            font-size: 1.4rem;
+        }
+
+        .feature-card p {
+            color: var(--text-muted);
+        }
+
+        /* Gallery Section */
+        .gallery {
+            margin-top: 100px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+
+        .gallery-img {
+            width: 100%;
+            border-radius: 12px;
+            aspect-ratio: 1/1;
+            object-fit: cover;
+            background: var(--card-bg);
+            border: 1px solid rgba(255,255,255,0.1);
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .gallery-img:hover {
+            transform: scale(1.02);
+            border-color: var(--primary);
+        }
+
+        /* Lightbox */
+        #lightbox {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        #lightbox img {
+            max-width: 90%;
+            max-height: 90%;
+            border-radius: 8px;
+            box-shadow: 0 0 30px rgba(0,0,0,0.5);
+        }
+
+        #lightbox .close-btn {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            color: white;
+            font-size: 40px;
+            cursor: pointer;
+            opacity: 0.7;
+        }
+
+        #lightbox .close-btn:hover {
+            opacity: 1;
+        }
+
+        /* Pricing/Closing */
+        .closing {
+            margin: 100px 0;
+            background: linear-gradient(135deg, var(--primary-dark) 0%, #4f46e5 100%);
+            padding: 60px;
+            border-radius: 30px;
+            text-align: center;
+        }
+
+        .closing h2 {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+        }
+
+        .price-info {
+            font-size: 1.1rem;
+            margin-bottom: 30px;
+            opacity: 0.9;
+        }
+
+        .whatsapp-cta {
+            background: #25D366;
+            color: white;
+            padding: 18px 36px;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 1.2rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .whatsapp-cta:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(37, 211, 102, 0.4);
+        }
+
+        footer {
+            padding: 40px 0;
+            text-align: center;
+            color: var(--text-muted);
+            border-top: 1px solid rgba(255,255,255,0.05);
+        }
+
+        /* Comparison Table */
+        .comparison-container {
+            margin-top: 50px;
+            overflow-x: auto;
+            background: var(--card-bg);
+            border-radius: 24px;
+            padding: 2px;
+            border: 1px solid rgba(255,255,255,0.05);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+        }
+
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            min-width: 600px;
+        }
+
+        .comparison-table th, .comparison-table td {
+            padding: 20px 25px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .comparison-table th {
+            background: rgba(15, 23, 42, 0.5);
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        .pro-highlight {
+            background: rgba(99, 102, 241, 0.1) !important;
+            color: var(--primary) !important;
+            position: relative;
+            border-left: 2px solid var(--primary-dark);
+            border-right: 2px solid var(--primary-dark);
+        }
+
+        .recom-badge {
+            background: var(--accent);
+            color: var(--bg);
+            font-size: 10px;
+            padding: 4px 10px;
+            border-radius: 50px;
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-weight: 900;
+            box-shadow: 0 4px 10px rgba(245, 158, 11, 0.3);
+        }
+
+        .comparison-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .comparison-table td:first-child {
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+
+        .comparison-table td.pro-highlight {
+            font-weight: 700;
+        }
+
+        /* Testimonials */
+        .testimonials-section {
+            margin-top: 100px;
+            text-align: center;
+        }
+
+        .testimonials-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 20px;
+            margin-top: 40px;
+        }
+
+        .testimonial-item {
+            background: var(--card-bg);
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.05);
+            transition: transform 0.3s ease;
+        }
+
+        .testimonial-item:hover {
+            transform: scale(1.03);
+            border-color: var(--primary);
+        }
+
+        .testimonial-item img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .trust-badges {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 40px;
+            flex-wrap: wrap;
+        }
+
+        .trust-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .trust-item i {
+            color: var(--primary);
+            font-size: 1.2rem;
+        }
+
+        @media (max-width: 768px) {
+            h1 { font-size: 2rem; padding: 0 10px; }
+            .hero-desc { font-size: 0.95rem; padding: 0 15px; }
+            .closing { padding: 40px 15px; border-radius: 20px; }
+            
+            /* Responsive Table Fix - Better Approach */
+            .comparison-container {
+                margin-left: -20px; /* Flush to edges on mobile */
+                margin-right: -20px;
+                border-radius: 0;
+                border-left: none;
+                border-right: none;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                position: relative;
+            }
+
+            .comparison-table {
+                display: table;
+                min-width: 700px; /* Force scroll */
+                border-spacing: 0;
+            }
+
+            .comparison-table th, .comparison-table td {
+                padding: 12px 10px;
+                font-size: 12px;
+                white-space: normal; /* Allow text wrap in cells */
+            }
+
+            .comparison-table th:first-child, 
+            .comparison-table td:first-child {
+                position: sticky;
+                left: 0;
+                background: #1e293b; /* Match card-bg */
+                z-index: 20;
+                min-width: 120px;
+                box-shadow: 5px 0 10px rgba(0,0,0,0.3);
+            }
+
+            /* Swipe Indicator */
+            .comparison-container::before {
+                content: '← Geser untuk bandingkan →';
+                display: block;
+                background: var(--primary-dark);
+                color: white;
+                font-size: 10px;
+                text-align: center;
+                padding: 5px;
+                font-weight: bold;
+            }
+
+            /* Grid Adjustments */
+            .features-grid {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+
+            .feature-card {
+                padding: 25px 20px;
+            }
+
+            .testimonials-grid {
+                grid-template-columns: repeat(2, 1fr); /* 2 columns for testimonials */
+                gap: 10px;
+            }
+
+            .gallery {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 8px;
+            }
+
+            .section-title {
+                margin: 60px 0 30px;
+            }
+
+            .section-title h2 {
+                font-size: 1.8rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            h1 { font-size: 1.6rem; }
+            .cta-button, .whatsapp-cta { 
+                width: 100%; 
+                justify-content: center;
+                padding: 14px 20px;
+                font-size: 1rem;
+            }
+            .trust-badges {
+                gap: 15px;
+            }
+            .trust-item {
+                font-size: 0.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- Hero -->
+        <header>
+            <div class="badge">🔥 Versi V3 - 50+ User Aktif | GRATIS UPDATE</div>
+            <h1>Uploader Foto & Video Otomatis,<br>Cuan Jalan Terus!</h1>
+            <p class="hero-desc">
+                Sudah <b>RATUSAN RIBU+</b> foto terupload otomatis! Capek upload satu-satu? Tinggalin aja! Biar AutoYu V3 yang urus semuanya. Kamu bisa lanjut ngedit atau istirahat sambil nunggu cuan masuk.
+            </p>
+            <a href="https://pramana.web.id/autoyu/download/" class="cta-button">
+                Download AutoYu V3 <i class="fas fa-download"></i>
+            </a>
+
+            <!-- Video Placeholder -->
+            <div class="video-container">
+            <iframe 
+                width="100%" 
+                height="100%" 
+                src="https://www.youtube.com/embed/7z4utig7KC0" 
+                title="AutoYu V3 Demo" 
+                frameborder="0" 
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                allowfullscreen
+                style="border-radius: 15px; border: 2px solid #334155;">
+            </iframe>
+        </div>
+        </header>
+
+        <!-- Fitur -->
+        <div class="section-title">
+            <h2>Kenapa FG Harus Pakai V3?</h2>
+            <p style="color: var(--text-muted)">Dibangun khusus berdasarkan pengalaman  FG di lapangan.</p>
+        </div>
+
+        <div class="features-grid">
+            <div class="feature-card">
+                <i class="fas fa-video feature-icon"></i>
+                <h3>Full Video Support</h3>
+                <p>Kirim karya videomu secepat kilat! Otomatis nungguin kompresi web Fotoyu sampai beres.</p>
+            </div>
+            <div class="feature-card">
+                <i class="fas fa-sd-card feature-icon"></i>
+                <h3>Direct SD Card</h3>
+                <p>Gak perlu copy-paste ke laptop lagi. Colok SD Card, klik, langsung upload. Hemat storage, hemat waktu!</p>
+            </div>
+            <div class="feature-card">
+                <i class="fas fa-tasks feature-icon"></i>
+                <h3>True Multitasking</h3>
+                <p>Aplikasi jalan di background. Kamu bebas lanjut Lightroom-an atau balas chat klien tanpa keganggu.</p>
+            </div>
+            <div class="feature-card">
+                <i class="fas fa-robot feature-icon"></i>
+                <h3>AI Optimized Mode</h3>
+                <p>Sistem otomatis nyari settingan upload paling stabil sesuai internet kamu. Anti-macet, anti-gagal.</p>
+            </div>
+            <div class="feature-card">
+                <i class="fas fa-users-cog feature-icon"></i>
+                <h3>Multi-Account Sat-Set</h3>
+                <p>Kelola banyak akun dalam satu aplikasi. Pindah akun cuma butuh satu klik, langsung login otomatis.</p>
+            </div>
+            <div class="feature-card">
+                <i class="fas fa-redo feature-icon"></i>
+                <h3>Lanjutkan Sisa Gagal</h3>
+                <p>Internet putus di tengah jalan? Santai! Klik satu tombol, sistem otomatis lanjutin upload file yang gagal tanpa duplikat.</p>
+            </div>
+            <div class="feature-card">
+                <i class="fas fa-desktop feature-icon"></i>
+                <h3>Multi-Platform Support</h3>
+                <p>Bisa jalan lancar di <b>Windows</b> maupun <b>macOS</b>. Apapun laptopnya, AutoYu V3 siap tempur!</p>
+            </div>
+            <div class="feature-card">
+                <i class="fas fa-map-marker-alt feature-icon"></i>
+                <h3>Smart Location & Price</h3>
+                <p>Isi lokasi event dan harga foto otomatis sesuai settingan terbaru. UI makin rapi, kerja makin sat-set!</p>
+            </div>
+        </div>
+
+        <!-- Comparison Section -->
+        <div class="section-title">
+            <h2>Pilih Senjata Tempurmu</h2>
+            <p style="color: var(--text-muted)">Gunakan versi yang paling sesuai dengan produktivitasmu di lapangan.</p>
+        </div>
+
+        <div class="comparison-container">
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>Fitur Unggulan</th>
+                        <th>AutoYu Lite</th>
+                        <th class="pro-highlight">AutoYu Pro (V3) <span class="recom-badge">WAJIB DIMILIKI</span></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Format Media</td>
+                        <td>Hanya Foto (.jpg, .png)</td>
+                        <td class="pro-highlight">Foto & Video (Full Support)</td>
+                    </tr>
+                    <tr>
+                        <td>Multi-Account</td>
+                        <td>1 Akun Saja</td>
+                        <td class="pro-highlight">Unlimited Akun (Sat-Set Ganti)</td>
+                    </tr>
+                    <tr>
+                        <td>FotoTree (Auto Structure)</td>
+                        <td><i class="fas fa-times" style="color: #ef4444;"></i> Tidak Ada</td>
+                        <td class="pro-highlight"><i class="fas fa-check" style="color: #10b981;"></i> Ada (Otomatis Rapikan Folder)</td>
+                    </tr>
+                    <tr>
+                        <td>AI Optimize Mode</td>
+                        <td><i class="fas fa-times" style="color: #ef4444;"></i> Tidak Ada</td>
+                        <td class="pro-highlight"><i class="fas fa-check" style="color: #10b981;"></i> Ada (Settingan Paling Stabil)</td>
+                    </tr>
+                    <tr>
+                        <td>Mode Kecepatan</td>
+                        <td>Safe Mode</td>
+                        <td class="pro-highlight">Safe & Turbo Mode (Super Kilat)</td>
+                    </tr>
+                    <tr>
+                        <td>Auto-Calc Settings</td>
+                        <td><i class="fas fa-times" style="color: #ef4444;"></i> Manual Input</td>
+                        <td class="pro-highlight"><i class="fas fa-check" style="color: #10b981;"></i> Otomatis Hitung Batch</td>
+                    </tr>
+                    <tr>
+                        <td>Direct SD Card</td>
+                        <td>Standard</td>
+                        <td class="pro-highlight">Optimized for Direct Upload</td>
+                    </tr>
+                    <tr>
+                        <td>Dukungan Update</td>
+                        <td>Basic Update</td>
+                        <td class="pro-highlight">Prioritas & Lifetime Update</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Gallery Section -->
+        <div class="section-title">
+            <h2>Tampilan Mewah, Kerja Nyaman</h2>
+            <p style="color: var(--text-muted)">Preview aplikasi AutoYu V3 yang didesain khusus untuk kebutuhan fotografer.</p>
+        </div>
+        <div class="gallery" id="image-gallery">
+                <!-- Diagnostik: Jika gambar ini tidak muncul, berarti link folder salah atau server memblokir akses -->
+                <img src="https://pramana.web.id/autoyu/images/1.jpg" style="display:none;" onerror="console.error('Gagal akses folder images!');">
+                
+                <div id="gallery-loader" style="grid-column: 1/-1; text-align: center; padding: 50px;">
+                    <i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: var(--primary);"></i>
+                    <p style="margin-top: 10px; color: var(--text-muted);">Menghubungkan ke pramana.web.id...</p>
+                </div>
+          </div>
+ 
+         <!-- Lightbox Overlay -->
+         <div id="lightbox" onclick="closeLightbox()">
+             <span class="close-btn">&times;</span>
+             <img id="lightbox-img" src="">
+         </div>
+ 
+         <script>
+             /* 
+                PENTING: Ganti nama file di bawah ini dengan nama asli file Anda di server.
+                Contoh: jika file Anda bernama 'foto_wedding_01.jpg', tuliskan 'foto_wedding_01.jpg' di sini.
+             */
+             const imageFiles = [
+                 '1.png', '2.png', '3.png', 'log.jpg', 
+                 'berhasil.jpg', '10KFOTO.jpg', 'sisagagal.jpg', 'sdcard.jpg', 'up.png', 'mac.png', 'dap.jpeg',
+                 // <-- Tambahkan nama file asli Anda di sini, misalnya: 'DSC_0001.JPG', 'test.png'
+             ];
+
+             const baseUrl = 'https://pramana.web.id/autoyu/images/';
+
+             function loadGallery() {
+                 const gallery = document.getElementById('image-gallery');
+                 const loader = document.getElementById('gallery-loader');
+                 
+                 // Acak urutan foto (Shuffle)
+                 const shuffled = imageFiles.sort(() => 0.5 - Math.random());
+
+                 // Bersihkan gallery (hapus loader)
+                 gallery.innerHTML = '';
+
+                 shuffled.forEach(filename => {
+                     const img = document.createElement('img');
+                     img.className = 'gallery-img';
+                     img.src = baseUrl + filename;
+                     img.alt = 'AutoYu Preview';
+                     
+                     // Efek klik untuk lightbox
+                     img.onclick = function() { openLightbox(this.src); };
+                     
+                     // Jika gambar gagal dimuat (file tidak ada di server)
+                     img.onerror = function() {
+                         this.src = `https://placehold.co/600x600/1E293B/818CF8/FFF?text=${filename}`;
+                     };
+
+                     gallery.appendChild(img);
+                 });
+             }
+
+             // Jalankan saat halaman siap
+             window.onload = function() {
+                 loadGallery();
+             };
+
+             function openLightbox(src) {
+                 const lightbox = document.getElementById('lightbox');
+                 const lightboxImg = document.getElementById('lightbox-img');
+                 lightboxImg.src = src;
+                 lightbox.style.display = 'flex';
+                 document.body.style.overflow = 'hidden';
+             }
+
+             function closeLightbox() {
+                 const lightbox = document.getElementById('lightbox');
+                 lightbox.style.display = 'none';
+                 document.body.style.overflow = 'auto';
+             }
+         </script>
+
+        <!-- Testimonials Section -->
+        <div class="testimonials-section">
+            <div class="section-title">
+                <h2>Puluhan Fotografer Sudah Membuktikan!</h2>
+                <p style="color: var(--text-muted)">Jangan cuma dengerin kata kami, lihat apa kata mereka yang sudah hemat waktu berjam-jam setiap harinya.</p>
+            </div>
+
+            <div class="testimonials-grid">
+                <div class="testimonial-item">
+                    <img src="https://pramana.web.id/autoyu/images/test1.png" alt="Testimonial AutoYu" onclick="openLightbox(this.src)" style="cursor: pointer;">
+                </div>
+                <div class="testimonial-item">
+                    <img src="https://pramana.web.id/autoyu/images/test2.png" alt="Testimonial AutoYu" onclick="openLightbox(this.src)" style="cursor: pointer;">
+                </div>
+                <div class="testimonial-item">
+                    <img src="https://pramana.web.id/autoyu/images/test3.png" alt="Testimonial AutoYu" onclick="openLightbox(this.src)" style="cursor: pointer;">
+                </div>
+                <div class="testimonial-item">
+                    <img src="https://pramana.web.id/autoyu/images/test4.png" alt="Testimonial AutoYu" onclick="openLightbox(this.src)" style="cursor: pointer;">
+                </div>
+            </div>
+
+            <div class="trust-badges">
+                <div class="trust-item">
+                    <i class="fas fa-check-circle"></i>
+                    <span>50+ User Aktif</span>
+                </div>
+                <div class="trust-item">
+                    <i class="fas fa-bolt"></i>
+                    <span>RATUSAN RIBU+ Foto Terupload</span>
+                </div>
+                <div class="trust-item">
+                    <i class="fas fa-sync"></i>
+                    <span>GRATIS UPDATE</span>
+                </div>
+            </div>
+
+            <h3 style="margin-top: 50px; font-size: 1.8rem; color: var(--primary);">Masih mau upload manual satu-satu?</h3>
+            <p style="color: var(--text-muted); margin-bottom: 20px;">Waktumu terlalu berharga untuk sekadar nungguin loading bar.</p>
+        </div>
+
+        <!-- Closing CTA -->
+        <div class="closing" id="beli">
+            <h2>Siap Kerja Lebih Cerdas?</h2>
+            <p class="price-info">
+                Amankan Lisensi <strong>LIFETIME</strong> sekarang sebelum harga naik karena fitur AI makin lengkap!
+            </p>
+            <a href="https://wa.me/6287739623456?text=Halo%20Admin,%20saya%20tertarik%20dengan%20AutoYu%20V3" class="whatsapp-cta">
+            <i class="fab fa-whatsapp"></i> Chat Admin (Konsultasi Gratis)
+        </a>
+            <p style="margin-top: 20px; font-size: 0.9rem; opacity: 0.8;">
+                *Sekali bayar, update gratis selamanya.
+            </p>
+        </div>
+
+        <footer>
+            <p>&copy; 2026 AutoYu V3 Pro. Dibuat oleh FG, Untuk FG Indonesia.</p>
+        </footer>
+    </div>
+
+</body>
+</html>

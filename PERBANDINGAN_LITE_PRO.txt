@@ -1,0 +1,42 @@
+================================================================================
+          PERBANDINGAN FITUR: AUTOYU LITE VS AUTOYU PRO (VERSI 2026)
+================================================================================
+
+Berikut adalah tabel perbandingan fitur antara versi LITE dan PRO setelah 
+implementasi perbaikan sistem kompresi dan optimasi sistem.
+
+--------------------------------------------------------------------------------
+FITUR / CAPABILITY            |      AUTOYU LITE       |      AUTOYU PRO
+--------------------------------------------------------------------------------
+Platform Dukungan             | Windows & macOS        | Windows & macOS
+Deteksi RAM Real-time         | Ya (Hanya Total RAM)   | Ya (Real-time Usage)
+Internal Browser (Portable)   | Ya                     | Ya
+--------------------------------------------------------------------------------
+SISTEM AUTOMASI               |                        |
+--------------------------------------------------------------------------------
+Mode Operasi                  | Standar                | Standar & TURBO Mode
+Multi-Tab Processing          | Tidak (Single Tab)     | Ya (Hingga 5+ Tab)
+AI Optimized (Auto Mode)      | Tidak                  | Ya (Sesuai Spek PC)
+Pembersihan Metadata macOS    | Ya (Abaikan ._*)       | Ya (Abaikan ._*)
+Filter Ekstensi Foto          | JPG, JPEG, PNG         | JPG, JPEG, PNG
+--------------------------------------------------------------------------------
+KEAMANAN & LISENSI            |                        |
+--------------------------------------------------------------------------------
+Hardware ID Binding           | Ya                     | Ya
+Enkripsi Lisensi (Fernet)     | Ya                     | Ya
+Auto-Update Driver            | Manual                 | Otomatis
+--------------------------------------------------------------------------------
+VERIFIKASI & STABILITAS       |                        |
+--------------------------------------------------------------------------------
+Smoke Test Verifikasi Build   | Ya                     | Ya
+Optimasi Ukuran ZIP (-r9y)    | Ya (~250MB)            | Ya (~300MB)
+Adaptive Patience Logic       | Standar                | Advanced (No-Stuck)
+--------------------------------------------------------------------------------
+
+KESIMPULAN:
+- AUTOYU LITE: Cocok untuk penggunaan personal dengan beban kerja ringan.
+- AUTOYU PRO: Direkomendasikan untuk fotografer profesional/event besar yang 
+  membutuhkan kecepatan tinggi (Multi-Tab) dan optimasi cerdas sesuai RAM.
+
+Semua versi sudah dibekali perbaikan "Anti-Stuck" khusus untuk pengguna MacBook.
+================================================================================

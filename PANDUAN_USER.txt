@@ -1,0 +1,80 @@
+PANDUAN LENGKAP INSTALASI & UNINSTALL AUTOYU PRO - macOS 
+ ================================================================================ 
+ 
+ Terima kasih telah menggunakan AutoYu Pro. Panduan ini dirancang untuk membantu 
+ Anda menginstal, menjalankan, dan menghapus aplikasi di macOS dengan benar. 
+ 
+ -------------------------------------------------------------------------------- 
+ 1. IDENTIFIKASI VERSI MAC ANDA 
+ -------------------------------------------------------------------------------- 
+ Pastikan Anda mengekstrak file ZIP yang sesuai dengan jenis Mac Anda: 
+ - AutoYuPro-AppleSilicon.zip: Untuk Mac dengan chip Apple (M1, M2, M3, M4). 
+ - AutoYuPro-Intel.zip: Untuk Mac dengan chip Intel (MacBook model lama). 
+ 
+ Cara cek: Klik logo Apple di pojok kiri atas -> "About This Mac" -> Lihat bagian "Chip" atau "Processor". 
+ 
+ -------------------------------------------------------------------------------- 
+ 2. LANGKAH-LANGKAH INSTALASI 
+ -------------------------------------------------------------------------------- 
+ 1. Ekstrak file .zip yang telah Anda unduh. 
+ 2. Anda akan melihat file bernama "AutoYuPro.app". 
+ 3. SERET (DRAG) file "AutoYuPro.app" ke folder "/Applications" (Aplikasi) Anda. 
+    Sangat disarankan menjalankan aplikasi dari folder Aplikasi agar sistem macOS 
+    dapat mengelola izin file dengan benar. 
+ 
+ -------------------------------------------------------------------------------- 
+ 3. CARA MEMBUKA APLIKASI PERTAMA KALI (PENTING!) 
+ -------------------------------------------------------------------------------- 
+ macOS memiliki sistem keamanan "Gatekeeper". Karena aplikasi ini belum di-sign 
+ secara resmi, Anda mungkin melihat pesan "unidentified developer". 
+ 
+ IKUTI LANGKAH INI UNTUK PERTAMA KALI: 
+ 1. Buka folder "/Applications". 
+ 2. JANGAN KLIK DUA KALI. Sebagai gantinya, KLIK KANAN pada "AutoYuPro.app". 
+ 3. Pilih "Open" (Buka) dari menu yang muncul. 
+ 4. Akan muncul dialog peringatan: "macOS cannot verify the developer...". 
+ 5. Klik tombol "Open" sekali lagi. 
+ 6. Langkah ini hanya perlu dilakukan satu kali. Selanjutnya Anda bisa membuka 
+    seperti biasa. 
+ 
+ -------------------------------------------------------------------------------- 
+ 4. MENGATASI ERROR "APP IS DAMAGED" (Jika Terjadi) 
+ -------------------------------------------------------------------------------- 
+ Jika macOS memberikan pesan "AutoYuPro is damaged and can't be opened", silakan: 
+ 1. Buka "Terminal" (Gunakan Command + Space, ketik "Terminal"). 
+ 2. Salin dan tempel perintah berikut ini: 
+    sudo xattr -rd com.apple.quarantine /Applications/AutoYuPro.app 
+ 3. Tekan Enter dan masukkan password Mac Anda (karakter tidak akan muncul). 
+ 4. Tekan Enter lagi. Sekarang buka kembali aplikasi. 
+ 
+ -------------------------------------------------------------------------------- 
+ 5. CARA UNINSTALL TOTAL (FRESH RESET) 
+ -------------------------------------------------------------------------------- 
+ Jika Anda ingin menghapus aplikasi secara bersih (termasuk lisensi & pengaturan): 
+ 1. Hapus Aplikasi: 
+    - Seret "AutoYuPro.app" dari folder /Applications ke Trash (Tong Sampah). 
+ 2. Hapus Folder Data Utama: 
+    - Buka Finder -> Klik menu "Go" -> "Go to Folder...". 
+    - Ketik: ~/Library/Application Support/AutoYuPro 
+    - Hapus seluruh folder tersebut. 
+ 3. Hapus Folder Lama (Opsional): 
+    - Ulangi langkah "Go to Folder..." dan ketik: ~/AutoYuPro 
+    - Hapus jika folder tersebut ada. 
+ 4. Kosongkan Trash. 
+ 
+ -------------------------------------------------------------------------------- 
+ 6. LOKASI DATA & LISENSI 
+ -------------------------------------------------------------------------------- 
+ - Data Pengaturan & Profil Browser: ~/Library/Application Support/AutoYuPro/ 
+ - File Lisensi (lic.dat): ~/Library/Application Support/AutoYuPro/lic.dat 
+ 
+ -------------------------------------------------------------------------------- 
+ 7. PERSYARATAN SISTEM 
+ -------------------------------------------------------------------------------- 
+ - macOS 11.0 (Big Sur) atau versi terbaru. 
+ - Koneksi Internet stabil untuk aktivasi dan upload. 
+ 
+ ================================================================================ 
+ Hubungi admin jika Anda memerlukan bantuan teknis lebih lanjut. 
+ Selamat menggunakan AutoYu Pro! 
+ ================================================================================ 

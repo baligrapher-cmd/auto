@@ -1,0 +1,157 @@
+[
+  {
+    "label": "before-upload",
+    "url": "https://www.fotoyu.com/upload",
+    "title": "FotoYu",
+    "buttons": [],
+    "inputs": [],
+    "images": 0,
+    "videos": 0,
+    "bodySnippet": "Beranda FotoYu Akun Saya FotoTree Temukan Teman Cara Kerja • Kerja Sama Unggah Konten PEDOMAN Foto Maks. 2000 file Pratinjau Video Maks. 50 file"
+  },
+  {
+    "label": "after-set-files-3s",
+    "url": "https://www.fotoyu.com/send-to-face",
+    "title": "FotoYu",
+    "buttons": [
+      "Kirim"
+    ],
+    "inputs": [
+      {
+        "tag": "textarea",
+        "type": "",
+        "placeholder": "Tulis sebuah deskripsi",
+        "name": "description",
+        "aria": "",
+        "value": ""
+      },
+      {
+        "tag": "input",
+        "type": "text",
+        "placeholder": "Ketik nama FotoTree",
+        "name": "",
+        "aria": "",
+        "value": ""
+      }
+    ],
+    "images": 2,
+    "videos": 0,
+    "bodySnippet": "Beranda FotoYu Akun Saya FotoTree Temukan Teman Cara Kerja • Kerja Sama Kirim ke Wajah Secara otomatis mengirim foto ke pemilik wajah FotoTree Kirim"
+  },
+  {
+    "label": "poll-1",
+    "url": "https://www.fotoyu.com/send-to-face",
+    "title": "FotoYu",
+    "buttons": [
+      "Kirim"
+    ],
+    "inputs": [
+      {
+        "tag": "textarea",
+        "type": "",
+        "placeholder": "Tulis sebuah deskripsi",
+        "name": "description",
+        "aria": "",
+        "value": ""
+      },
+      {
+        "tag": "input",
+        "type": "text",
+        "placeholder": "Ketik nama FotoTree",
+        "name": "",
+        "aria": "",
+        "value": ""
+      }
+    ],
+    "images": 2,
+    "videos": 0,
+    "bodySnippet": "Beranda FotoYu Akun Saya FotoTree Temukan Teman Cara Kerja • Kerja Sama Kirim ke Wajah Secara otomatis mengirim foto ke pemilik wajah FotoTree Kirim"
+  },
+  {
+    "label": "poll-2",
+    "url": "https://www.fotoyu.com/send-to-face",
+    "title": "FotoYu",
+    "buttons": [
+      "Kirim"
+    ],
+    "inputs": [
+      {
+        "tag": "textarea",
+        "type": "",
+        "placeholder": "Tulis sebuah deskripsi",
+        "name": "description",
+        "aria": "",
+        "value": ""
+      },
+      {
+        "tag": "input",
+        "type": "text",
+        "placeholder": "Ketik nama FotoTree",
+        "name": "",
+        "aria": "",
+        "value": ""
+      }
+    ],
+    "images": 2,
+    "videos": 0,
+    "bodySnippet": "Beranda FotoYu Akun Saya FotoTree Temukan Teman Cara Kerja • Kerja Sama Kirim ke Wajah Secara otomatis mengirim foto ke pemilik wajah FotoTree Kirim"
+  },
+  {
+    "label": "poll-3",
+    "url": "https://www.fotoyu.com/send-to-face",
+    "title": "FotoYu",
+    "buttons": [
+      "Kirim"
+    ],
+    "inputs": [
+      {
+        "tag": "textarea",
+        "type": "",
+        "placeholder": "Tulis sebuah deskripsi",
+        "name": "description",
+        "aria": "",
+        "value": ""
+      },
+      {
+        "tag": "input",
+        "type": "text",
+        "placeholder": "Ketik nama FotoTree",
+        "name": "",
+        "aria": "",
+        "value": ""
+      }
+    ],
+    "images": 2,
+    "videos": 0,
+    "bodySnippet": "Beranda FotoYu Akun Saya FotoTree Temukan Teman Cara Kerja • Kerja Sama Kirim ke Wajah Secara otomatis mengirim foto ke pemilik wajah FotoTree Kirim"
+  },
+  {
+    "label": "poll-4",
+    "url": "https://www.fotoyu.com/send-to-face",
+    "title": "FotoYu",
+    "buttons": [
+      "Kirim"
+    ],
+    "inputs": [
+      {
+        "tag": "textarea",
+        "type": "",
+        "placeholder": "Tulis sebuah deskripsi",
+        "name": "description",
+        "aria": "",
+        "value": ""
+      },
+      {
+        "tag": "input",
+        "type": "text",
+        "placeholder": "Ketik nama FotoTree",
+        "name": "",
+        "aria": "",
+        "value": ""
+      }
+    ],
+    "images": 2,
+    "videos": 0,
+    "bodySnippet": "Beranda FotoYu Akun Saya FotoTree Temukan Teman Cara Kerja • Kerja Sama Kirim ke Wajah Secara otomatis mengirim foto ke pemilik wajah FotoTree Kirim"
+  }
+]
