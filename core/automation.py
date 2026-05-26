@@ -115,7 +115,7 @@ class TabAutomation:
             ],
         )
 
-    def __init__(self, tab_id: int, page: Page, files: list, config: dict, logger_func, global_lock=None, location_update_callback=None):
+    def __init__(self, tab_id: int, page: Page, files: list, config: dict, logger_func, global_lock=None, location_update_callback=None, tree_update_callback=None):
         self.tab_id = tab_id
         self.page = page
         self.all_files = files
@@ -146,6 +146,7 @@ class TabAutomation:
         self.fototree = self._normalize_text_value(config.get('fototree', '')) or None
         self.fototree_keyword = str(self.fototree or "").strip()
         self.fototree_locked = bool(config.get("fototree_locked")) and bool(self.fototree_keyword)
+        self.tree_update_callback = tree_update_callback
 
         raw_location = self._normalize_text_value(config.get('location', ''))
         self.location = raw_location.strip() if raw_location else None
@@ -510,18 +511,21 @@ class TabAutomation:
                                         existing_meta = {}
                                 break
                             
-                            # Logika sederhana: cari ID dalam post_data (string search atau regex)
-                            # Ini akan disempurnakan saat kita melihat hasil intercept nyata
+                            # USER FIX: Implementasi Mutual Exclusion (Isi Salah Satu)
+                            # Jika menangkap tree_id, maka location_id harus dibersihkan, dan sebaliknya.
                             changed = False
                             if "tree_id" in post_data:
                                 match = re.search(r'name="tree_id"\s*\r\n\r\n(\d+)', post_data)
-                                if match:
+                                if match and match.group(1) != "0":
                                     existing_meta["tree_id"] = match.group(1)
+                                    existing_meta.pop("location_id", None) # Hapus lokasi jika tree ada
                                     changed = True
+                            
                             if "location_id" in post_data:
                                 match = re.search(r'name="location_id"\s*\r\n\r\n(\d+)', post_data)
-                                if match:
+                                if match and match.group(1) != "0":
                                     existing_meta["location_id"] = match.group(1)
+                                    existing_meta.pop("tree_id", None) # Hapus tree jika lokasi ada
                                     changed = True
                             
                             if changed:
@@ -610,6 +614,23 @@ class TabAutomation:
 
         try:
             self.location_update_callback(resolved_name, match_type, source)
+        except Exception:
+            pass
+
+    def _notify_tree_update(self, resolved_name, match_type, source):
+        resolved_name = self._extract_primary_option_text(resolved_name)
+            
+        if not resolved_name:
+            return
+
+        self.fototree = resolved_name
+        self._resolved_tree = resolved_name
+
+        if not self.tree_update_callback:
+            return
+
+        try:
+            self.tree_update_callback(resolved_name, match_type, source)
         except Exception:
             pass
 
@@ -856,16 +877,18 @@ class TabAutomation:
     def _fill_location_search_input(self, search_input, value, wait_ms=1500):
         # Gunakan .fill untuk kecepatan dan reliabilitas input modern (React/Vue)
         search_input.click(force=True)
-        search_input.fill(value)
+        # Hapus dulu isinya
+        search_input.fill("")
+        # Ketik pelan untuk memicu dropdown
+        self.page.keyboard.type(value, delay=100)
         # Beri jeda agar website memproses event input
         self.page.wait_for_timeout(wait_ms)
         
-        # Verifikasi apakah teks benar-benar terisi (fallback ke type jika fill gagal)
+        # Verifikasi apakah teks benar-benar terisi
         try:
             current = search_input.input_value()
-            if not current or current != value:
-                search_input.fill("")
-                self.page.keyboard.type(value, delay=50)
+            if not current or current.lower() != value.lower():
+                search_input.fill(value)
                 self.page.wait_for_timeout(wait_ms)
         except:
             pass
@@ -879,7 +902,7 @@ class TabAutomation:
         best_live, match_type = self._pick_best_match(keyword, live_candidates)
         if best_live:
             if kind == "fototree":
-                self._resolved_tree = best_live
+                self._notify_tree_update(best_live, match_type or "live", "live")
                 self._log_once(
                     f"🌳 FotoTree realtime cocok: {best_live}",
                     ("tree", match_type, self._normalize_search_text(best_live)),
@@ -1737,6 +1760,12 @@ class TabAutomation:
                                     self.log(f"🌳 Mengisi FotoTree {'(Setup)' if is_setup_data else f'(Attempt {tree_attempt+1})'}: {search_keyword}")
                                     self._fill_location_search_input(tree_input, search_keyword, wait_ms=2500)
                                     
+                                    # Tunggu sebentar agar dropdown muncul
+                                    try:
+                                        self.page.wait_for_selector("[role='option'], div[class*='option'], li[class*='item']", timeout=3000)
+                                    except:
+                                        pass
+
                                     selected_tree = requested_tree
                                     if not is_setup_data:
                                         selected_tree = self._resolve_realtime_choice(requested_tree, kind="fototree") or requested_tree
@@ -1789,15 +1818,21 @@ class TabAutomation:
                                         self.page.wait_for_timeout(1000)
 
                                 if not clicked_tree:
+                                    # Fallback: Klik opsi pertama yang muncul di dropdown jika ada
                                     try:
-                                        self.page.keyboard.press("Enter")
-                                        clicked_tree = True
-                                    except Exception:
+                                        first_opt = self.page.locator("[role='option'], div[class*='option'], li[class*='item']").first
+                                        if first_opt.is_visible(timeout=1000):
+                                            self.log("🌳 Memilih opsi pertama yang tersedia di daftar...")
+                                            first_opt.click(force=True)
+                                            clicked_tree = True
+                                    except:
                                         pass
 
                                 if clicked_tree:
-                                    self._resolved_tree = selected_tree
+                                    self._notify_tree_update(selected_tree, "exact", "live")
                                     self.page.wait_for_timeout(800)
+                                else:
+                                    self.log("⚠️ Gagal memilih FotoTree dari daftar. Website mewajibkan pilihan dari dropdown.")
                             else:
                                 self._resolved_tree = requested_tree
                     except Exception as e:

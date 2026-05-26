@@ -78,6 +78,7 @@ def main():
         worker.license_error_signal.connect(window.handle_license_error)
         worker.browser_disconnected_signal.connect(window.handle_browser_disconnected)
         worker.location_resolved_signal.connect(window.on_location_resolved)
+        worker.fototree_resolved_signal.connect(lambda name, *args: window._set_fototree_value(name, locked=True, persist=True))
         worker.finished_signal.connect(on_finished)
 
         def handle_continue():

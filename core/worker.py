@@ -23,6 +23,7 @@ class AutomationWorker(QThread):
     login_success_signal = Signal() # Signal when login is detected
     browser_disconnected_signal = Signal() # Signal when browser disconnects/crashes
     location_resolved_signal = Signal(str, str, str) # location_name, match_type, source
+    fototree_resolved_signal = Signal(str, str, str) # tree_name, match_type, source
 
     def __init__(self, config):
         super().__init__()
@@ -67,7 +68,32 @@ class AutomationWorker(QThread):
 
         self._last_location_resolution = resolution_key
         self.config["location"] = resolved_name
+        # USER FIX: Clear FotoTree in config if Location is resolved
+        self.config["fototree"] = ""
         self.location_resolved_signal.emit(
+            resolved_name,
+            str(match_type or ""),
+            str(source or "")
+        )
+
+    def _handle_fototree_resolved(self, tree_name, match_type, source):
+        resolved_name = str(tree_name or "").strip()
+        if not resolved_name:
+            return
+
+        resolution_key = (
+            resolved_name.lower(),
+            str(match_type or "").strip().lower(),
+            str(source or "").strip().lower(),
+        )
+        if resolution_key == getattr(self, "_last_tree_resolution", None):
+            return
+
+        self._last_tree_resolution = resolution_key
+        self.config["fototree"] = resolved_name
+        # USER FIX: Clear Location in config if FotoTree is resolved
+        self.config["location"] = ""
+        self.fototree_resolved_signal.emit(
             resolved_name,
             str(match_type or ""),
             str(source or "")
@@ -248,6 +274,8 @@ class AutomationWorker(QThread):
                     ],
                     "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36", # Paksa Desktop User Agent
                     "no_viewport": True,
+                    "permissions": ["geolocation"],
+                    "geolocation": {"latitude": -8.65, "longitude": 115.216667}, # Default Bali
                     "timeout": 120000 
                 }
                 print(f"[Worker] Launch args: {launch_args}")
@@ -443,17 +471,24 @@ class AutomationWorker(QThread):
                                 except Exception:
                                     pass
 
+                            # USER FIX: Mutual Exclusion Metadata Capture
                             changed = False
                             meta = {}
+                            is_tree = False
+                            is_loc = False
+
                             if "tree_id" in post_data:
                                 match = re.search(r'name="tree_id"\s*\r\n\r\n(\d+)', post_data)
-                                if match:
+                                if match and match.group(1) != "0":
                                     meta["tree_id"] = match.group(1)
+                                    is_tree = True
                                     changed = True
+                            
                             if "location_id" in post_data:
                                 match = re.search(r'name="location_id"\s*\r\n\r\n(\d+)', post_data)
-                                if match:
+                                if match and match.group(1) != "0":
                                     meta["location_id"] = match.group(1)
+                                    is_loc = True
                                     changed = True
 
                             if not changed:
@@ -471,7 +506,15 @@ class AutomationWorker(QThread):
                                                 existing = json.load(f) or {}
                                         except Exception:
                                             existing = {}
-                                    existing.update(meta)
+                                    
+                                    # Update with mutual exclusion
+                                    if is_tree:
+                                        existing["tree_id"] = meta["tree_id"]
+                                        existing.pop("location_id", None)
+                                    if is_loc:
+                                        existing["location_id"] = meta["location_id"]
+                                        existing.pop("tree_id", None)
+
                                     with open(metadata_file, "w", encoding="utf-8") as f:
                                         json.dump(existing, f)
                                 except Exception:
@@ -842,7 +885,8 @@ class AutomationWorker(QThread):
                     config=self.config,
                     logger_func=lambda msg: self.log_signal.emit(msg),
                     global_lock=global_lock,
-                    location_update_callback=self._handle_location_resolved
+                    location_update_callback=self._handle_location_resolved,
+                    tree_update_callback=self._handle_fototree_resolved
                 )
                 tabs.append(tab_auto)
                 try:
@@ -1019,7 +1063,8 @@ class AutomationWorker(QThread):
                                     config=self.config,
                                     logger_func=lambda msg: self.log_signal.emit(msg),
                                     global_lock=global_lock,
-                                    location_update_callback=self._handle_location_resolved
+                                    location_update_callback=self._handle_location_resolved,
+                                    tree_update_callback=self._handle_fototree_resolved
                                 )
                                 tabs.append(new_tab)
                                 current_tabs += 1

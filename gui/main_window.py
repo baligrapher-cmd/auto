@@ -2247,6 +2247,14 @@ class MainWindow(QMainWindow):
             if clean_text:
                 self.fototree_display_lbl.setText(f"FotoTree: {clean_text}")
                 self.fototree_display_lbl.setStyleSheet("color: #2DD4BF; font-weight: 800; font-size: 13px;")
+                # USER FIX: Clear Location display if FotoTree is set
+                if hasattr(self, 'location_display_lbl'):
+                    self.location_display_lbl.setText("Lokasi: (Otomatis dari Setup)")
+                    self.location_display_lbl.setStyleSheet("color: #94A3B8; font-weight: 800; font-size: 13px;")
+                    # Clear hidden input as well
+                    self.location_input.blockSignals(True)
+                    self.location_input.setText("")
+                    self.location_input.blockSignals(False)
             else:
                 self.fototree_display_lbl.setText("FotoTree: (Otomatis dari Setup)")
                 self.fototree_display_lbl.setStyleSheet("color: #94A3B8; font-weight: 800; font-size: 13px;")
@@ -2483,6 +2491,15 @@ class MainWindow(QMainWindow):
         if hasattr(self, 'location_display_lbl'):
             self.location_display_lbl.setText(f"Lokasi: {resolved_name}")
             self.location_display_lbl.setStyleSheet("color: #10B981; font-weight: 800; font-size: 13px;")
+            # USER FIX: Clear FotoTree display if Location is resolved
+            if hasattr(self, 'fototree_display_lbl'):
+                self.fototree_display_lbl.setText("FotoTree: (Otomatis dari Setup)")
+                self.fototree_display_lbl.setStyleSheet("color: #94A3B8; font-weight: 800; font-size: 13px;")
+                # Clear hidden input as well
+                self.fototree_input.blockSignals(True)
+                self.fototree_input.setText("")
+                self.fototree_input.blockSignals(False)
+                self._fototree_locked = False
             
         self.location_mode_status.setText("Dipilih Live")
         self.location_mode_status.setStyleSheet("color: #2DD4BF; font-size: 11px; font-weight: 800;")
@@ -3442,16 +3459,30 @@ class MainWindow(QMainWindow):
                 if hasattr(self, 'fototree_display_lbl'):
                     self.fototree_display_lbl.setText(f"FotoTree: {tree_name}")
                     self.fototree_display_lbl.setStyleSheet("color: #2DD4BF; font-weight: 800; font-size: 13px;")
+                
+                # USER FIX: Clear Location if Tree exists in setup
+                self.location_input.setText("")
+                if hasattr(self, 'location_display_lbl'):
+                    self.location_display_lbl.setText("Lokasi: (Otomatis dari Setup)")
+                    self.location_display_lbl.setStyleSheet("color: #94A3B8; font-weight: 800; font-size: 13px;")
+                    
             elif loc_name:
                 self.location_input.setText(loc_name)
                 if hasattr(self, 'location_display_lbl'):
                     self.location_display_lbl.setText(f"Lokasi: {loc_name}")
                     self.location_display_lbl.setStyleSheet("color: #10B981; font-weight: 800; font-size: 13px;")
+                
+                # USER FIX: Clear Tree if Location exists in setup
+                self.fototree_input.setText("")
+                self._fototree_locked = False
+                if hasattr(self, 'fototree_display_lbl'):
+                    self.fototree_display_lbl.setText("FotoTree: (Otomatis dari Setup)")
+                    self.fototree_display_lbl.setStyleSheet("color: #94A3B8; font-weight: 800; font-size: 13px;")
 
             summary = []
             if tree_name:
                 summary.append(f"🌳 {tree_name}")
-            if loc_name:
+            elif loc_name:
                 summary.append(f"📍 {loc_name}")
             
             status_text = "READY"
