@@ -17,7 +17,7 @@ from PySide6.QtCore import Qt, Signal, Slot, QDateTime, QUrl, QTimer, QEvent, QP
 from PySide6.QtGui import QIcon, QClipboard, QFont, QDesktopServices, QTextCursor
 from PySide6.QtMultimedia import QSoundEffect
 
-AUTO_YU_VERSION = "3.0.2"
+AUTO_YU_VERSION = "3.0.4"
 UPDATE_CHECK_URL = "https://pramana.web.id/autoyu/download/update.json"
 
 def is_admin():

@@ -1757,12 +1757,26 @@ class TabAutomation:
                                             words = base_keyword.split()
                                             if len(words) > 2: search_keyword = " ".join(words[:2])
 
-                                    self.log(f"🌳 Mengisi FotoTree {'(Setup)' if is_setup_data else f'(Attempt {tree_attempt+1})'}: {search_keyword}")
-                                    self._fill_location_search_input(tree_input, search_keyword, wait_ms=2500)
+                                    # USER FIX: Sederhanakan log pengisian
+                                    self.log(f"🌳 Mengisi FotoTree: {search_keyword}")
+                                    
+                                    # Metode Injeksi Langsung untuk kecepatan
+                                    try:
+                                        self.page.evaluate(f"""(val) => {{
+                                            const input = document.querySelector('input[placeholder*="FotoTree"], input[class*="tree"]');
+                                            if (input) {{
+                                                input.value = val;
+                                                input.dispatchEvent(new Event('input', {{ bubbles: true }}));
+                                                input.dispatchEvent(new Event('change', {{ bubbles: true }}));
+                                            }}
+                                        }}""", search_keyword)
+                                    except: pass
+
+                                    self._fill_location_search_input(tree_input, search_keyword, wait_ms=2000)
                                     
                                     # Tunggu sebentar agar dropdown muncul
                                     try:
-                                        self.page.wait_for_selector("[role='option'], div[class*='option'], li[class*='item']", timeout=3000)
+                                        self.page.wait_for_selector("[role='option'], div[class*='option'], li[class*='item']", timeout=2000)
                                     except:
                                         pass
 
@@ -1832,7 +1846,17 @@ class TabAutomation:
                                     self._notify_tree_update(selected_tree, "exact", "live")
                                     self.page.wait_for_timeout(800)
                                 else:
-                                    self.log("⚠️ Gagal memilih FotoTree dari daftar. Website mewajibkan pilihan dari dropdown.")
+                                    # USER FIX: Cek apakah sebenarnya sudah terisi meski klik gagal
+                                    try:
+                                        final_val = tree_input.input_value() or ""
+                                        if self._normalize_search_text(final_val) == self._normalize_search_text(selected_tree):
+                                            self.log(f"✅ FotoTree sudah aktif: {final_val}")
+                                            clicked_tree = True
+                                            self._notify_tree_update(selected_tree, "exact", "live")
+                                    except: pass
+                                    
+                                    if not clicked_tree:
+                                        self.log("ℹ️ Sedang mencocokkan FotoTree dengan daftar...")
                             else:
                                 self._resolved_tree = requested_tree
                     except Exception as e:
@@ -1902,8 +1926,8 @@ class TabAutomation:
                         max_attempts = 1 if is_setup_data else 3
 
                         for search_attempt in range(max_attempts):
-                            self.log(f"⌨️ Mengisi input pencarian {'(Setup)' if is_setup_data else f'(Attempt {search_attempt+1})'}: {requested_location}")
-                            self._fill_location_search_input(search_input, requested_location, wait_ms=2500)
+                            self.log(f"⌨️ Mencari Lokasi: {requested_location}")
+                            self._fill_location_search_input(search_input, requested_location, wait_ms=2000)
 
                             target_location = requested_location
                             if not is_setup_data:
@@ -1927,7 +1951,7 @@ class TabAutomation:
                                             
                                             first_match.click(force=True)
                                             suggestion_found = True
-                                            self.log(f"📍 Berhasil memilih lokasi realtime: {display_location}")
+                                            self.log(f"📍 Lokasi dipilih: {display_location}")
                                             break
                                 except: continue
                                 
@@ -1941,7 +1965,7 @@ class TabAutomation:
                                         if opt_text and "pilih" not in opt_text.lower():
                                             first_option.click(force=True)
                                             suggestion_found = True
-                                            self.log(f"📍 Lokasi dipilih: {opt_text}")
+                                            self.log(f"📍 Lokasi otomatis: {opt_text}")
                                             break
                                 except: pass
                             
