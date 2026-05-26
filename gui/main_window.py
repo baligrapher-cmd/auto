@@ -2554,6 +2554,7 @@ class MainWindow(QMainWindow):
             
             # SINKRONISASI LOGIKA HASH (PENTING: Gunakan .lower() dan 12 digit pertama)
             hash_path = abs_path
+            # macOS/Linux are case-sensitive, only lowercase on Windows
             if os.name == 'nt':
                 hash_path = hash_path.lower()
             folder_hash = hashlib.md5(hash_path.encode('utf-8')).hexdigest()[:12]
@@ -2696,13 +2697,23 @@ class MainWindow(QMainWindow):
             pass
     
     def _auto_detect_sd(self, folder_path):
+        # USER FIX: Skip Windows-specific drive detection on macOS/Linux
+        if os.name != 'nt':
+            # On Mac, we can check for /Volumes path
+            if folder_path.startswith('/Volumes/'):
+                self.radio_src_sd.setChecked(True)
+            return
+
         try:
             drive, _ = os.path.splitdrive(folder_path)
             if not drive:
                 return
             root = drive + "\\"
             # DRIVE_REMOVABLE = 2
-            dtype = ctypes.windll.kernel32.GetDriveTypeW(root)
+            try:
+                dtype = ctypes.windll.kernel32.GetDriveTypeW(root)
+            except:
+                dtype = 0
             # Fallback heuristics: banyak card reader melapor sebagai FIXED (3)
             # Deteksi folder khas SD: DCIM/PRIVATE/MISC di root
             sd_signals = ["DCIM", "PRIVATE", "MISC", "AVCHD", "MP_ROOT", "CANONMSC", "CANONDC", "SONY", "NIKON", "FUJIFILM", "PANASONIC"]
@@ -2717,6 +2728,22 @@ class MainWindow(QMainWindow):
     
     def _find_sd_candidates(self):
         candidates = []
+        # USER FIX: Handle macOS removable drives
+        if sys.platform == 'darwin':
+            try:
+                volumes = "/Volumes"
+                if os.path.exists(volumes):
+                    for name in os.listdir(volumes):
+                        path = os.path.join(volumes, name)
+                        if os.path.isdir(path) and not name.startswith('.'):
+                            # Deteksi folder khas SD
+                            sd_signals = ["DCIM", "PRIVATE", "MISC"]
+                            if any(os.path.isdir(os.path.join(path, s)) for s in sd_signals):
+                                candidates.append(path)
+            except:
+                pass
+            return candidates
+
         try:
             for code in range(ord('A'), ord('Z')+1):
                 drive = chr(code) + ":\\"

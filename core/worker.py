@@ -240,6 +240,7 @@ class AutomationWorker(QThread):
         # CLEANUP: Agresif bersihkan sampah profile
         self._cleanup_profile(user_data_dir)
 
+        # USER FIX: SINKRONISASI INITIAL HISTORY (uploaded.json tetap sebagai fallback global)
         self.history_file = os.path.join(account_root, "uploaded.json")
         self.uploaded_history = self._load_history()
 
@@ -534,6 +535,18 @@ class AutomationWorker(QThread):
                 # AUTO-DETECTION: Deteksi otomatis jika user sudah login
                 from core.automation import SELECTORS
                 
+                # USER FIX: SINKRONISASI LOGIKA HASH (Source of Truth)
+                import hashlib
+                def _get_folder_hash(path):
+                    abs_p = os.path.abspath(os.path.expanduser(path))
+                    # Normalisasi trailing separator
+                    if abs_p.endswith(os.sep): abs_p = abs_p[:-1]
+                    
+                    hash_p = abs_p
+                    if os.name == 'nt':
+                        hash_p = hash_p.lower()
+                    return hashlib.md5(hash_p.encode('utf-8')).hexdigest()[:12]
+
                 while not self._login_confirmed and self._is_running:
                     try:
                         curr_url = page.url.lower()
@@ -799,20 +812,33 @@ class AutomationWorker(QThread):
                 # Gunakan _get_files dari helper jika ada, atau os.listdir
                 def _get_files_with_filter(folder_path):
                     try:
-                        import glob
-                        # Ambil semua file gambar/video
-                        patterns = ['*.jpg', '*.jpeg', '*.png', '*.mp4', '*.mov', '*.avi']
+                        # USER FIX: SINKRONISASI LOGIKA DETEKSI FILE DENGAN UI
+                        # Menggunakan os.walk agar konsisten dan lebih handal di macOS
+                        real_folder = os.path.abspath(os.path.expanduser(folder_path))
+                        
+                        upload_type = self.config.get('type', 'foto')
+                        if upload_type == 'foto':
+                            exts = ('.jpg', '.jpeg', '.png', '.webp')
+                        else:
+                            exts = ('.mp4', '.mov', '.avi', '.mkv', '.wmv', '.flv', '.webm', '.3gp', '.m4v', '.mpg', '.mpeg')
+                            
                         all_found = []
-                        for p in patterns:
-                            # Case insensitive search
-                            all_found.extend(glob.glob(os.path.join(folder_path, p)))
-                            all_found.extend(glob.glob(os.path.join(folder_path, p.upper())))
+                        for root, dirs, files in os.walk(real_folder):
+                            # Abaikan folder internal
+                            if 'processed' in dirs: dirs.remove('processed')
+                            if 'failed' in dirs: dirs.remove('failed')
+                            
+                            for name in files:
+                                # macOS / Linux: Abaikan file bayangan (._*) dan file sistem (.DS_Store)
+                                if name.startswith('._') or name.startswith('.DS_Store'):
+                                    continue
+                                    
+                                if name.lower().endswith(exts):
+                                    full_path = os.path.join(root, name)
+                                    all_found.append(os.path.abspath(full_path))
                         
                         # Filter unik dan sorting
-                        unique_files = sorted(list(set([os.path.abspath(f) for f in all_found])))
-                        
-                        # JIKA "Retry Failed Only" aktif, jangan filter di sini. 
-                        # Biarkan TabAutomation yang memfilter berdasarkan tracker nanti.
+                        unique_files = sorted(list(set(all_found)))
                         return unique_files
                     except Exception as e:
                         print(f"Error listing files: {e}")
@@ -820,6 +846,11 @@ class AutomationWorker(QThread):
 
                 all_files = _get_files_with_filter(self.config['folder'])
                 
+                # USER FIX: SINKRONISASI TRACKER PATH (Mac Compatibility)
+                folder_hash = _get_folder_hash(self.config['folder'])
+                self.history_file = os.path.join(account_root, f"tracker_{folder_hash}.json")
+                self.uploaded_history = self._load_history()
+
                 if not all_files:
                     self.log_signal.emit("Tidak ada file di folder!")
                     # BERI INFO TAMBAHAN: Mungkin folder salah atau ekstensi tidak didukung
