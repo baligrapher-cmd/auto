@@ -30,7 +30,7 @@ SELECTORS = {
     "success_text": "text=Berhasil, text=Diunggah, text=Success",
     # Hindari false-positive dari teks umum seperti 'Error'/'Wajib' yang sering muncul di form.
     # Diperketat agar hanya mencari di elemen yang kemungkinan besar adalah modal/toast error
-    "error_text": "div[role='alert'] >> text=/gagal|kendala|kesalahan|koneksi|internet|coba\\s+ulang|duplikat|sudah\\s+pernah/i, div[class*='modal'] >> text=/gagal|kendala|kesalahan|koneksi|internet|coba\\s+ulang|duplikat|sudah\\s+pernah/i, .error-message >> text=/gagal|kesalahan|duplikat/i",
+    "error_text": "div[role='alert'] >> text=/gagal|kendala|kesalahan|koneksi|internet|coba\\s+ulang|duplikat|sudah\\s+pernah|tidak\\s+valid|format/i, div[class*='modal'] >> text=/gagal|kendala|kesalahan|koneksi|internet|coba\\s+ulang|duplikat|sudah\\s+pernah|tidak\\s+valid|format/i, .error-message >> text=/gagal|kesalahan|duplikat|valid|format/i",
     "uploading": "text=Mengunggah, .progress-bar, .upload-indicator",
     "counter_text": "text=/\\d+\\s*\\/\\s*\\d+\\s*(Konten|foto|video|items|files|image)/i",
     "dup_modal_text": "text=/Diunggah|terdeteksi\\s+sebagai\\s+duplikat/i",
@@ -140,8 +140,15 @@ class TabAutomation:
         self.file_index = 0
         self.upload_type = config.get('type', 'foto')
         
-        self.price = config.get('price', '8000')
-        self.desc = config.get('desc', '')
+        # USER FIX: Bersihkan Harga dari karakter non-digit (Rp, titik, koma, spasi)
+        # Tetap pertahankan angka yang dimasukkan user secara murni
+        raw_price = str(config.get('price', '')).strip()
+        self.price = "".join(filter(str.isdigit, raw_price))
+        
+        # USER FIX: Bersihkan Deskripsi dari karakter non-printable / weird Unicode / Emojis (non-BMP)
+        # Karakter non-BMP (emoji) sering menyebabkan masalah pada database server lama
+        raw_desc = str(config.get('desc', '')).strip()
+        self.desc = "".join(c for c in raw_desc if (c.isprintable() or c in "\n\r") and ord(c) <= 0xFFFF).replace("\r\n", "\n")
         
         self.fototree = self._normalize_text_value(config.get('fototree', '')) or None
         self.fototree_keyword = str(self.fototree or "").strip()
@@ -513,16 +520,17 @@ class TabAutomation:
                             
                             # USER FIX: Implementasi Mutual Exclusion (Isi Salah Satu)
                             # Jika menangkap tree_id, maka location_id harus dibersihkan, dan sebaliknya.
+                            # Menggunakan regex yang lebih fleksibel (\r?\n) untuk kompatibilitas lintas OS
                             changed = False
                             if "tree_id" in post_data:
-                                match = re.search(r'name="tree_id"\s*\r\n\r\n(\d+)', post_data)
+                                match = re.search(r'name="tree_id"\s*\r?\n\r?\n(\d+)', post_data)
                                 if match and match.group(1) != "0":
                                     existing_meta["tree_id"] = match.group(1)
                                     existing_meta.pop("location_id", None) # Hapus lokasi jika tree ada
                                     changed = True
                             
                             if "location_id" in post_data:
-                                match = re.search(r'name="location_id"\s*\r\n\r\n(\d+)', post_data)
+                                match = re.search(r'name="location_id"\s*\r?\n\r?\n(\d+)', post_data)
                                 if match and match.group(1) != "0":
                                     existing_meta["location_id"] = match.group(1)
                                     existing_meta.pop("tree_id", None) # Hapus tree jika lokasi ada
@@ -1339,11 +1347,11 @@ class TabAutomation:
                                 pass
                         if is_input:
                             # self.log(f"Mengirim file...")
-                            # Verifikasi file sebelum upload
-                            valid_files = [f for f in self.current_batch_files if os.path.exists(f)]
+                            # Verifikasi file sebelum upload (Ada & Ukuran > 0)
+                            valid_files = [f for f in self.current_batch_files if os.path.exists(f) and os.path.getsize(f) > 0]
                             
                             if not valid_files:
-                                self.log(f"❌ {len(self.current_batch_files)} file tidak ditemukan di folder.")
+                                self.log(f"❌ {len(self.current_batch_files)} file tidak valid (0 byte atau tidak ditemukan).")
                                 self._mark_batch(self.current_batch_files, 'failed')
                                 self.failed_count += len(self.current_batch_files)
                                 self.file_index += len(self.current_batch_files)
@@ -1351,11 +1359,11 @@ class TabAutomation:
                                 self.state = AutoState.OPEN_UPLOAD_PAGE
                                 return True
                             
-                            # Jika hanya sebagian yang ada, tandai yang hilang sebagai gagal
+                            # Jika hanya sebagian yang ada/valid, tandai sisanya sebagai gagal
                             if len(valid_files) < len(self.current_batch_files):
                                 missing_count = len(self.current_batch_files) - len(valid_files)
-                                self.log(f"⚠️ {missing_count} file tidak ditemukan, melanjutkan sisanya...")
-                                # Cari file mana yang hilang dan tandai gagal
+                                self.log(f"⚠️ {missing_count} file tidak valid, melanjutkan sisanya...")
+                                # Cari file mana yang bermasalah dan tandai gagal
                                 for f in self.current_batch_files:
                                     if f not in valid_files:
                                         self._mark_file(f, 'failed')
@@ -1369,9 +1377,10 @@ class TabAutomation:
                                 trigger.click(force=True)
                             
                             file_chooser = fc_info.value
-                            valid_files = [f for f in self.current_batch_files if os.path.exists(f)]
+                            # Verifikasi file sebelum upload (Ada & Ukuran > 0)
+                            valid_files = [f for f in self.current_batch_files if os.path.exists(f) and os.path.getsize(f) > 0]
                             if not valid_files:
-                                self.log(f"❌ {len(self.current_batch_files)} file tidak ditemukan di folder.")
+                                self.log(f"❌ {len(self.current_batch_files)} file tidak valid (0 byte atau tidak ditemukan).")
                                 self._mark_batch(self.current_batch_files, 'failed')
                                 self.failed_count += len(self.current_batch_files)
                                 self.file_index += len(self.current_batch_files)
@@ -1381,7 +1390,7 @@ class TabAutomation:
 
                             if len(valid_files) < len(self.current_batch_files):
                                 missing_count = len(self.current_batch_files) - len(valid_files)
-                                self.log(f"⚠️ {missing_count} file tidak ditemukan, melanjutkan sisanya...")
+                                self.log(f"⚠️ {missing_count} file tidak valid, melanjutkan sisanya...")
                                 for f in self.current_batch_files:
                                     if f not in valid_files:
                                         self._mark_file(f, 'failed')
@@ -1762,14 +1771,14 @@ class TabAutomation:
                                     
                                     # Metode Injeksi Langsung untuk kecepatan
                                     try:
-                                        self.page.evaluate(f"""(val) => {{
+                                        self.page.evaluate("""(val) => {
                                             const input = document.querySelector('input[placeholder*="FotoTree"], input[class*="tree"]');
-                                            if (input) {{
+                                            if (input) {
                                                 input.value = val;
-                                                input.dispatchEvent(new Event('input', {{ bubbles: true }}));
-                                                input.dispatchEvent(new Event('change', {{ bubbles: true }}));
-                                            }}
-                                        }}""", search_keyword)
+                                                input.dispatchEvent(new Event('input', { bubbles: true }));
+                                                input.dispatchEvent(new Event('change', { bubbles: true }));
+                                            }
+                                        }""", search_keyword)
                                     except: pass
 
                                     self._fill_location_search_input(tree_input, search_keyword, wait_ms=2000)

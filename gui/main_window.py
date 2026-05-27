@@ -3013,7 +3013,7 @@ class MainWindow(QMainWindow):
     
     def _count_media_files(self, folder_path, is_foto, limit=None):
         if is_foto:
-            exts = ('.jpg', '.jpeg', '.png')
+            exts = ('.jpg', '.jpeg', '.png', '.webp')
         else:
             exts = ('.mp4', '.mov', '.avi', '.mkv', '.wmv', '.flv', '.webm', '.3gp', '.m4v', '.mpg', '.mpeg')
         total = 0
@@ -3980,14 +3980,18 @@ class MainWindow(QMainWindow):
         try:
             # Sesuaikan ekstensi dengan tipe yang dipilih (foto/video)
             if self.radio_video.isChecked():
-                exts = ('.mp4', '.mov', '.avi', '.mkv', '.wmv', '.flv', '.webm')
+                exts = ('.mp4', '.mov', '.avi', '.mkv', '.wmv', '.flv', '.webm', '.3gp', '.m4v', '.mpg', '.mpeg')
             else:
-                exts = ('.jpg', '.jpeg', '.png')
+                exts = ('.jpg', '.jpeg', '.png', '.webp')
                 
             count = 0
             for root, dirs, files in os.walk(base_dir):
                 if os.path.basename(root).lower() == 'failed':
-                    count += len([f for f in files if f.lower().endswith(exts)])
+                    for f in files:
+                        if f.startswith('._') or f.startswith('.DS_Store'):
+                            continue
+                        if f.lower().endswith(exts):
+                            count += 1
             return count
         except Exception:
             return 0
