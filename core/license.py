@@ -18,7 +18,9 @@ from cryptography.hazmat.primitives import serialization
 VERIFY_URL = "https://api.pramana.web.id/verify.php"
 
 COMMON_HEADERS = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36 AutoYu/3.0.0"
+    "User-Agent": "AutoYu-Client/3.0.4",
+    "Accept": "application/json",
+    "Content-Type": "application/x-www-form-urlencoded"
 }
 
 # RSA Public Key for Verification
@@ -240,16 +242,23 @@ def check_license(force=False, app_type="pro"):
         # 2. Online Validation
         hwid = get_hwid()
         device = get_device_info()
+        
+        # Sanitize payload to avoid weird characters that might trigger WAF (Status 415/403)
+        def _clean(val):
+            if not val: return "UNKNOWN"
+            return str(val).encode('ascii', 'ignore').decode('ascii').strip()
+
         try:
-            response = requests.post(VERIFY_URL, data={
-                'license_key': license_key,
-                'machine_id': hwid,
-                'variant_prefix': app_type.upper(), # Kirim prefix variant (PRO/LITE) ke server
-                'device_name': device['hostname'],
-                'brand': device['manufacturer'],
-                'model': device['model'],
-                'serial': device['serial']
-            }, timeout=25, verify=True, headers=COMMON_HEADERS)
+            payload = {
+                'license_key': _clean(license_key),
+                'machine_id': _clean(hwid),
+                'variant_prefix': _clean(app_type).upper(),
+                'device_name': _clean(device.get('hostname')),
+                'brand': _clean(device.get('manufacturer')),
+                'model': _clean(device.get('model')),
+                'serial': _clean(device.get('serial'))
+            }
+            response = requests.post(VERIFY_URL, data=payload, timeout=25, verify=True, headers=COMMON_HEADERS)
             
             if response.status_code == 200:
                 try:
@@ -302,15 +311,21 @@ def activate_license(license_key, agreed=False, agreement_version="0.0", app_typ
     """
     hwid = get_hwid()
     device = get_device_info()
+    
+    # Sanitize payload to avoid weird characters that might trigger WAF (Status 415/403)
+    def _clean(val):
+        if not val: return "UNKNOWN"
+        return str(val).encode('ascii', 'ignore').decode('ascii').strip()
+
     try:
         payload = {
-            'license_key': license_key,
-            'machine_id': hwid,
-            'variant_prefix': app_type.upper(), # Kirim prefix variant (PRO/LITE) ke server
-            'device_name': device['hostname'],
-            'brand': device['manufacturer'],
-            'model': device['model'],
-            'serial': device['serial']
+            'license_key': _clean(license_key),
+            'machine_id': _clean(hwid),
+            'variant_prefix': _clean(app_type).upper(),
+            'device_name': _clean(device.get('hostname')),
+            'brand': _clean(device.get('manufacturer')),
+            'model': _clean(device.get('model')),
+            'serial': _clean(device.get('serial'))
         }
         response = requests.post(VERIFY_URL, data=payload, timeout=25, verify=True, headers=COMMON_HEADERS)
         
