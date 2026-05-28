@@ -18,9 +18,20 @@ from cryptography.hazmat.primitives import serialization
 VERIFY_URL = "https://api.pramana.web.id/verify.php"
 
 COMMON_HEADERS = {
-    "User-Agent": "AutoYu-Client/3.0.4",
-    "Accept": "application/json",
-    "Content-Type": "application/x-www-form-urlencoded"
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36 Edg/148.0.0.0",
+    "Accept": "application/json, text/javascript, */*; q=0.01",
+    "Accept-Language": "en-US,en;q=0.9,id;q=0.8",
+    "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+    "Origin": "https://api.pramana.web.id",
+    "Referer": "https://api.pramana.web.id/verify.php",
+    "Connection": "keep-alive",
+    "Sec-Ch-Ua": '"Not/A)Brand";v="8", "Chromium";v="148", "Microsoft Edge";v="148"',
+    "Sec-Ch-Ua-Mobile": "?0",
+    "Sec-Ch-Ua-Platform": '"Windows"',
+    "Sec-Fetch-Dest": "empty",
+    "Sec-Fetch-Mode": "cors",
+    "Sec-Fetch-Site": "same-origin",
+    "X-Requested-With": "XMLHttpRequest"
 }
 
 # RSA Public Key for Verification
