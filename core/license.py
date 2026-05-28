@@ -96,9 +96,13 @@ def _get_cmd_output(cmd):
         # Kita cari baris yang TIDAK sama dengan nama kolom yang diminta
         if len(cmd) >= 4 and cmd[0] == 'wmic' and cmd[2] == 'get':
             target_header = cmd[3].lower()
-            for line in clean_lines:
-                if line.lower() != target_header:
-                    return line
+            # STABILITY FIX: Sort clean_lines to ensure the same value is picked every time
+            # even if the OS returns results in a different order (e.g. multiple disks).
+            data_lines = [l for l in clean_lines if l.lower() != target_header]
+            if data_lines:
+                data_lines.sort()
+                return data_lines[0]
+            return "UNKNOWN"
         
         # Fallback ke baris pertama jika bukan wmic atau tidak ketemu
         return clean_lines[0] if clean_lines else "UNKNOWN"
@@ -106,13 +110,24 @@ def _get_cmd_output(cmd):
         return "UNKNOWN"
 
 def get_hwid():
-    """Generates a unique Hardware ID based on CPU, Disk, and Machine GUID."""
+    """Generates a unique Hardware ID based on static system identifiers (CPU, BIOS, Motherboard, UUID)."""
     try:
         if sys.platform == "win32":
+            # 1. CPU ID (Sangat Stabil)
             cpu = _get_cmd_output(['wmic', 'cpu', 'get', 'processorid'])
-            disk = _get_cmd_output(['wmic', 'diskdrive', 'get', 'serialnumber'])
+            
+            # 2. Motherboard Serial (Sangat Stabil, tapi kadang 'None' di laptop tertentu)
+            board = _get_cmd_output(['wmic', 'baseboard', 'get', 'serialnumber'])
+            
+            # 3. BIOS Serial (Tambahan stabilitas untuk laptop/brand besar)
+            bios = _get_cmd_output(['wmic', 'bios', 'get', 'serialnumber'])
+            
+            # 4. System UUID (ID unik Windows/Hardware yang sangat jarang berubah)
             uuid = _get_cmd_output(['wmic', 'csproduct', 'get', 'uuid'])
-            raw_id = f"{cpu}|{disk}|{uuid}"
+            
+            # JANGAN gunakan diskdrive serial karena bisa berubah jika user colok Flashdisk/Harddisk External
+            # Kita gabungkan semua identitas statis ini
+            raw_id = f"CPU:{cpu}|BOARD:{board}|BIOS:{bios}|UUID:{uuid}"
         elif sys.platform == "darwin":
             # macOS implementation
             uuid = subprocess.check_output("ioreg -rd1 -c IOPlatformExpertDevice | grep -E '(IOPlatformUUID)' | awk '{print $3}' | tr -d '\"'", shell=True).decode().strip()

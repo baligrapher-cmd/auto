@@ -256,10 +256,6 @@ class AutomationWorker(QThread):
                 print("[Worker] Playwright started. Launching browser...")
                 
                 # Launch Persistent Context
-                ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-                if sys.platform == 'darwin':
-                    ua = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-
                 launch_args = {
                     "user_data_dir": user_data_dir,
                     "headless": False,
@@ -277,7 +273,7 @@ class AutomationWorker(QThread):
                         "--window-size=1280,720", # Paksa ukuran desktop
                         "--start-maximized" # Start maximized untuk tampilan desktop penuh
                     ],
-                    "user_agent": ua, # Gunakan UA yang sesuai OS
+                    "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36", # Paksa Desktop User Agent
                     "no_viewport": True,
                     "permissions": ["geolocation"],
                     "geolocation": {"latitude": -8.65, "longitude": 115.216667}, # Default Bali

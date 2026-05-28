@@ -804,6 +804,32 @@ class LicenseDialog(QDialog):
         act_layout.addWidget(self.btn_activate)
         act_layout.addWidget(act_desc)
 
+        # HWID Display
+        hwid_container = QHBoxLayout()
+        hwid_container.setSpacing(5)
+        self.hwid_label = QLabel(f"ID: {get_hwid()[:12]}...")
+        self.hwid_label.setStyleSheet("color: #64748B; font-size: 10px; font-weight: 700; font-family: monospace;")
+        self.btn_copy_hwid = QPushButton("Salin ID")
+        self.btn_copy_hwid.setCursor(Qt.PointingHandCursor)
+        self.btn_copy_hwid.setFixedSize(60, 22)
+        self.btn_copy_hwid.setStyleSheet("""
+            QPushButton { 
+                background-color: #1E293B; 
+                color: #818CF8; 
+                border: 1px solid #334155; 
+                border-radius: 4px; 
+                font-size: 9px; 
+                font-weight: 800;
+            }
+            QPushButton:hover { background-color: #334155; }
+        """)
+        self.btn_copy_hwid.clicked.connect(self.copy_hwid)
+        hwid_container.addStretch()
+        hwid_container.addWidget(self.hwid_label)
+        hwid_container.addWidget(self.btn_copy_hwid)
+        hwid_container.addStretch()
+        act_layout.addLayout(hwid_container)
+
         # Separator
         line = QFrame()
         line.setFrameShape(QFrame.HLine)
@@ -893,6 +919,8 @@ class LicenseDialog(QDialog):
                 self.status_desc.setText(f"Gagal verifikasi (Koneksi bermasalah).\n{status_code}")
             elif "SERVER_CONNECTION_ERROR" in status_code:
                 self.status_desc.setText(f"Server merespon dengan error.\n{status_code}")
+            elif "perangkat lain" in str(status_code).lower():
+                self.status_desc.setText("Lisensi terkunci di perangkat lain.\nHubungi admin & sertakan ID perangkat Anda.")
             else:
                 self.status_desc.setText("Aplikasi belum diaktifkan.")
                 
@@ -906,6 +934,12 @@ class LicenseDialog(QDialog):
         self.status_title.style().polish(self.status_title)
         self.btn_activate.style().unpolish(self.btn_activate)
         self.btn_activate.style().polish(self.btn_activate)
+
+    def copy_hwid(self):
+        hwid = get_hwid()
+        QApplication.clipboard().setText(hwid)
+        self.btn_copy_hwid.setText("TERSALIN!")
+        QTimer.singleShot(2000, lambda: self.btn_copy_hwid.setText("Salin ID"))
 
     def do_activation(self):
         key = self.license_input.text().strip()
@@ -2120,7 +2154,10 @@ class MainWindow(QMainWindow):
             self.license_badge.setText("⚠️ Perlu Update Persetujuan")
             self.license_badge.setStyleSheet("color: #F59E0B; font-size: 13px; font-weight: bold;")
         else:
-            self.license_badge.setText("Lisensi Tidak Aktif")
+            if "perangkat lain" in str(status_code).lower():
+                self.license_badge.setText("⚠️ Lisensi Terkunci di Perangkat Lain")
+            else:
+                self.license_badge.setText("Lisensi Tidak Aktif")
             self.license_badge.setStyleSheet("color: #EF4444; font-size: 13px;")
 
     def update_mode_label(self, mode_name, color):
@@ -3013,7 +3050,7 @@ class MainWindow(QMainWindow):
     
     def _count_media_files(self, folder_path, is_foto, limit=None):
         if is_foto:
-            exts = ('.jpg', '.jpeg', '.png', '.webp')
+            exts = ('.jpg', '.jpeg', '.png')
         else:
             exts = ('.mp4', '.mov', '.avi', '.mkv', '.wmv', '.flv', '.webm', '.3gp', '.m4v', '.mpg', '.mpeg')
         total = 0
@@ -3980,18 +4017,14 @@ class MainWindow(QMainWindow):
         try:
             # Sesuaikan ekstensi dengan tipe yang dipilih (foto/video)
             if self.radio_video.isChecked():
-                exts = ('.mp4', '.mov', '.avi', '.mkv', '.wmv', '.flv', '.webm', '.3gp', '.m4v', '.mpg', '.mpeg')
+                exts = ('.mp4', '.mov', '.avi', '.mkv', '.wmv', '.flv', '.webm')
             else:
-                exts = ('.jpg', '.jpeg', '.png', '.webp')
+                exts = ('.jpg', '.jpeg', '.png')
                 
             count = 0
             for root, dirs, files in os.walk(base_dir):
                 if os.path.basename(root).lower() == 'failed':
-                    for f in files:
-                        if f.startswith('._') or f.startswith('.DS_Store'):
-                            continue
-                        if f.lower().endswith(exts):
-                            count += 1
+                    count += len([f for f in files if f.lower().endswith(exts)])
             return count
         except Exception:
             return 0
