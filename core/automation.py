@@ -1431,99 +1431,19 @@ class TabAutomation:
                 except:
                     pass
 
-                # Log status setiap 10 detik (dikurangi dari 5 agar tidak spam)
-                if int(elapsed) % 10 == 0:
-                    pass
-                    # self.log(f"Sedang menyiapkan {label_preview}...")
-                    # Debug logging dihapus agar tidak teknis dan tidak terbaca kompetitor
-
-                if "send-to-face" in url:
-                    # self.log(f"Menyiapkan data...")
-                    
-                    # Release lock and set compression done as we are moving out of heavy phase
-                    if self.global_lock.get('injector') == self.tab_id:
-                        self.global_lock['injector'] = None
-                    self.compression_done = True
-
-                    # UNTUK VIDEO: Langsung cek price_input karena video langsung redirect ke send-to-face
-                    if self.upload_type == "video":
-                        try:
-                            # Cek error "Format file tidak sesuai"
-                            try:
-                                body_text = self.page.locator("body").inner_text(timeout=1000)
-                                if "Format file tidak sesuai" in body_text:
-                                    self.log(f"❌ Format file tidak sesuai.")
-                                    # Coba klik tombol TUTUP
-                                    try:
-                                        tutup_btn = self.page.locator("button:has-text('TUTUP')").first
-                                        if tutup_btn.is_visible(timeout=1000):
-                                            tutup_btn.click(timeout=1000)
-                                            self.page.wait_for_timeout(500)
-                                    except:
-                                        try:
-                                            ok_btn = self.page.locator(SELECTORS["modal_ok"]).last
-                                            if ok_btn.is_visible(timeout=1000):
-                                                ok_btn.click(timeout=1000)
-                                                self.page.wait_for_timeout(500)
-                                        except:
-                                            pass
-                                    self.log(f"⚠️ {len(self.current_batch_files)} file gagal.")
-                                    self.failed_count += len(self.current_batch_files)
-                                    self.active_count = 0
-                                    self.file_index += len(self.current_batch_files)
-                                    self.state = AutoState.OPEN_UPLOAD_PAGE
-                                    self.state_start_time = time.time()
-                                    return True
-                            except:
-                                pass
-
-                            price_input = self.page.locator(SELECTORS["price_input"]).first
-                            if price_input.count() > 0 and price_input.is_visible(timeout=500):
-                                self.state = AutoState.FILL_METADATA
-                                self.state_start_time = time.time()
-                                return True
-                        except Exception:
-                            pass
-                        # Jika tidak ada price_input visible, coba cari elemen lain
-                        try:
-                            self.page.wait_for_timeout(300) # Dipercepat dari 1000ms
-                        except Exception:
-                            pass
-                        # Return True agar loop tetap jalan, biarkan timeout yang menangani
+                # Check if price_input is already visible (skip preview entirely)
+                try:
+                    price_input = self.page.locator(SELECTORS["price_input"]).first
+                    if price_input.count() > 0 and price_input.is_visible(timeout=500):
+                        if self.global_lock.get('injector') == self.tab_id:
+                            self.global_lock['injector'] = None
+                        self.compression_done = True
+                        self.state = AutoState.FILL_METADATA
+                        self.state_start_time = time.time()
                         return True
+                except:
+                    pass
 
-                    # Untuk foto, tetap tunggu tombol navigasi
-                    else:
-                        try:
-                            # Cek apakah price_input sudah visible
-                            try:
-                                if self.page.locator(SELECTORS["price_input"]).first.is_visible(timeout=500):
-                                    self.state = AutoState.FILL_METADATA
-                                    self.state_start_time = time.time()
-                                    return True
-                            except:
-                                pass
-
-                            # Selalu coba cari tombol navigasi
-                            nav_selectors = [
-                                "button:has-text('Lanjut')",
-                                "button:has-text('Berikutnya')",
-                                "button:has-text('Next')",
-                                "button:has-text('Continue')",
-                                "button[type='submit']"
-                            ]
-                            for sel in nav_selectors:
-                                try:
-                                    btn = self.page.locator(sel).first
-                                    if btn.count() > 0 and btn.is_visible(timeout=300):
-                                        btn.click(force=True)
-                                        self.page.wait_for_timeout(800) # Dipercepat dari 2000ms
-                                        break
-                                except:
-                                    continue
-                        except Exception:
-                            pass
-                
                 if "edit" in url or "send-to-face" in url:
                     if self.global_lock.get('injector') == self.tab_id:
                         self.global_lock['injector'] = None
@@ -1551,32 +1471,8 @@ class TabAutomation:
                 except:
                     pass
 
-                # TURBO MODE: Skip strict preview wait if configured
-                if not self.mode_config.get("strict_preview_wait", True):
-                    if self.page.locator(SELECTORS["price_input"]).first.is_visible():
-                        if self.global_lock.get('injector') == self.tab_id:
-                            self.global_lock['injector'] = None
-                        self.compression_done = True
-                        self.state = AutoState.FILL_METADATA
-                        self.state_start_time = time.time()
-                        return True
-
-                # Adaptive Patience: Reset timer if "Mengompres" is visible
-                try:
-                    if self.page.locator(SELECTORS["compressing"]).first.is_visible(timeout=500):
-                        # if int(elapsed) % 10 == 0:
-                        #     label = "video" if self.upload_type == "video" else "foto"
-                        #     self.log(f"Sedang mengompres {label}...")
-                        self.state_start_time = time.time()
-                except:
-                    pass
-                
-                # Timeout adaptif: 15 detik per foto (Min 5 menit untuk video)
-                base_timeout = 300 if self.upload_type == "video" else 60
-                dynamic_timeout = max(base_timeout, len(self.current_batch_files) * 15)
-                
-                if elapsed > dynamic_timeout:
-                    # self.log(f"Menyiapkan data...")
+                # Timeout super cepat: Tidak menunggu thumbnail sama sekali!
+                if elapsed > 5: # 5 detik max di WAIT_PREVIEW
                     if self.global_lock.get('injector') == self.tab_id:
                         self.global_lock['injector'] = None
                     self.compression_done = True
@@ -1600,11 +1496,11 @@ class TabAutomation:
                 # SPEED OPTIMIZED: Use wait_for for faster detection
                 try:
                     price_input = self.page.locator(SELECTORS["price_input"]).first
-                    price_input.wait_for(state="visible", timeout=2000) # Fast wait
+                    price_input.wait_for(state="visible", timeout=3000) # Fast wait 3 detik
                     self.state = AutoState.FILL_METADATA
                     self.state_start_time = time.time()
                 except:
-                    if elapsed > 30:
+                    if elapsed > 10: # Timeout lebih cepat: 10 detik
                         self.log(f"Gagal menyiapkan data")
                         self.log(f"⚠️ {len(self.current_batch_files)} file gagal.")
                         self.failed_count += len(self.current_batch_files)
