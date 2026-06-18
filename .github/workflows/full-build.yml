@@ -69,10 +69,21 @@ jobs:
     
     - name: Install Dependencies (x64)
       run: |
+        # Force x86_64 architecture
+        export ARCHFLAGS="-arch x86_64"
+        export PIP_PREFER_BINARY=1
+        export PIP_PLATFORM=macosx_14_0_x86_64
+        export PIP_ONLY_BINARY=:all:
+        
         arch -x86_64 python -m venv venv
         source venv/bin/activate
         arch -x86_64 python -m pip install --upgrade pip
-        arch -x86_64 python -m pip install -r requirements.txt pyinstaller pillow
+        
+        # Install cryptography and cffi from source to ensure x86_64
+        arch -x86_64 pip install --force-reinstall --no-binary=cryptography,cffi cryptography cffi
+        
+        # Install other requirements
+        arch -x86_64 pip install -r requirements.txt pyinstaller pillow
     
     - name: Install Playwright Browsers (x64)
       run: |
