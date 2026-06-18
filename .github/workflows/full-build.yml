@@ -58,7 +58,7 @@ jobs:
 
   # --- MAC INTEL BUILD ---
   build-mac-intel:
-    runs-on: macos-14
+    runs-on: macos-13
     steps:
     - uses: actions/checkout@v4
     - name: Set up Python (x64)
@@ -69,33 +69,22 @@ jobs:
     
     - name: Install Dependencies (x64)
       run: |
-        # Force x86_64 architecture
-        export ARCHFLAGS="-arch x86_64"
-        export PIP_PREFER_BINARY=1
-        export PIP_PLATFORM=macosx_14_0_x86_64
-        export PIP_ONLY_BINARY=:all:
-        
-        arch -x86_64 python -m venv venv
+        python -m venv venv
         source venv/bin/activate
-        arch -x86_64 python -m pip install --upgrade pip
-        
-        # Install cryptography and cffi from source to ensure x86_64
-        arch -x86_64 pip install --force-reinstall --no-binary=cryptography,cffi cryptography cffi
-        
-        # Install other requirements
-        arch -x86_64 pip install -r requirements.txt pyinstaller pillow
+        python -m pip install --upgrade pip setuptools wheel
+        pip install -r requirements.txt pyinstaller pillow
     
     - name: Install Playwright Browsers (x64)
       run: |
         source venv/bin/activate
         export PLAYWRIGHT_BROWSERS_PATH=$PWD/pw-browsers
-        arch -x86_64 python -m playwright install chromium chromium-headless-shell ffmpeg
+        python -m playwright install chromium chromium-headless-shell ffmpeg
     
     - name: Build with PyInstaller (x64)
       run: |
         source venv/bin/activate
         python generate_icns.py || echo "ICNS generation failed"
-        arch -x86_64 pyinstaller --clean --noconfirm --distpath dist AutoYuPro.spec
+        pyinstaller --clean --noconfirm --distpath dist --target-architecture x86_64 AutoYuPro.spec
     
     - name: Bundle Browser (Mac Intel)
       run: |
