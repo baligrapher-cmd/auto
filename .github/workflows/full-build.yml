@@ -30,15 +30,12 @@ jobs:
       run: |
         # Build PRO
         pyinstaller --clean --noconfirm --distpath dist AutoYuPro.spec
-        # Build LITE
-        pyinstaller --clean --noconfirm --distpath dist AutoYuLite.spec
     
     - name: Bundle Browser (Windows)
       run: |
-        # Bundle for PRO
         $APP_PATH = "dist\AutoYuPro"
         if (Test-Path "pw-browsers") {
-            echo "📦 Bundling browsers for Windows PRO..."
+            echo "📦 Bundling browsers for Windows..."
             New-Item -ItemType Directory -Force -Path "$APP_PATH\browsers"
             Copy-Item -Path "pw-browsers\*" -Destination "$APP_PATH\browsers" -Recurse
             
@@ -46,24 +43,18 @@ jobs:
             Get-ChildItem -Path "$APP_PATH\browsers" -Filter "*.zip" -Recurse | Remove-Item
             Get-ChildItem -Path "$APP_PATH\browsers" -Filter "*.gz" -Recurse | Remove-Item
         }
-        # Bundle for LITE (no browser needed)
-        echo "📦 Lite version doesn't need browser bundle"
     
     - name: Create Release Package
       run: |
         cd dist
         Copy-Item "..\PANDUAN_USER.txt" "AutoYuPro\"
-        Copy-Item "..\PANDUAN_USER.txt" "AutoYuLite\"
         Compress-Archive -Path "AutoYuPro" -DestinationPath "..\AutoYuPro-Windows.zip"
-        Compress-Archive -Path "AutoYuLite" -DestinationPath "..\AutoYuLite-Windows.zip"
     
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
         name: AutoYu-Windows-Build
-        path: |
-          AutoYuPro-Windows.zip
-          AutoYuLite-Windows.zip
+        path: AutoYuPro-Windows.zip
 
   # --- MAC INTEL BUILD ---
   build-mac-intel:
@@ -94,35 +85,27 @@ jobs:
         source venv/bin/activate
         python generate_icns.py || echo "ICNS generation failed"
         pyinstaller --clean --noconfirm --distpath dist --target-architecture x86_64 AutoYuPro.spec
-        pyinstaller --clean --noconfirm --distpath dist --target-architecture x86_64 AutoYuLite.spec
     
     - name: Bundle Browser (Mac Intel)
       run: |
-        # Bundle for PRO
         APP_PATH="dist/AutoYuPro.app"
         mkdir -p "$APP_PATH/Contents/Resources/browsers"
         cp -R pw-browsers/* "$APP_PATH/Contents/Resources/browsers/"
         find "$APP_PATH/Contents/Resources/browsers" -name "*.zip" -delete
         find "$APP_PATH/Contents/Resources/browsers" -name "*.gz" -delete
         codesign --force --deep --sign - "$APP_PATH"
-        # Bundle for LITE (no browser needed)
-        APP_LITE_PATH="dist/AutoYuLite.app"
-        codesign --force --deep --sign - "$APP_LITE_PATH"
     
     - name: Create Release Package
       run: |
         cd dist
         cp ../PANDUAN_USER.txt .
         zip -r9y ../AutoYuPro-Mac-Intel.zip AutoYuPro.app PANDUAN_USER.txt
-        zip -r9y ../AutoYuLite-Mac-Intel.zip AutoYuLite.app PANDUAN_USER.txt
     
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
         name: AutoYu-Mac-Intel-Build
-        path: |
-          AutoYuPro-Mac-Intel.zip
-          AutoYuLite-Mac-Intel.zip
+        path: AutoYuPro-Mac-Intel.zip
 
   # --- MAC SILICON BUILD ---
   build-mac-silicon:
@@ -148,32 +131,24 @@ jobs:
       run: |
         python generate_icns.py || echo "ICNS generation failed"
         pyinstaller --clean --noconfirm --distpath dist AutoYuPro.spec
-        pyinstaller --clean --noconfirm --distpath dist AutoYuLite.spec
     
     - name: Bundle Browser (Mac Silicon)
       run: |
-        # Bundle for PRO
         APP_PATH="dist/AutoYuPro.app"
         mkdir -p "$APP_PATH/Contents/Resources/browsers"
         cp -R pw-browsers/* "$APP_PATH/Contents/Resources/browsers/"
         find "$APP_PATH/Contents/Resources/browsers" -name "*.zip" -delete
         find "$APP_PATH/Contents/Resources/browsers" -name "*.gz" -delete
         codesign --force --deep --sign - "$APP_PATH"
-        # Bundle for LITE (no browser needed)
-        APP_LITE_PATH="dist/AutoYuLite.app"
-        codesign --force --deep --sign - "$APP_LITE_PATH"
     
     - name: Create Release Package
       run: |
         cd dist
         cp ../PANDUAN_USER.txt .
         zip -r9y ../AutoYuPro-Mac-Silicon.zip AutoYuPro.app PANDUAN_USER.txt
-        zip -r9y ../AutoYuLite-Mac-Silicon.zip AutoYuLite.app PANDUAN_USER.txt
     
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
         name: AutoYu-Mac-Silicon-Build
-        path: |
-          AutoYuPro-Mac-Silicon.zip
-          AutoYuLite-Mac-Silicon.zip
+        path: AutoYuPro-Mac-Silicon.zip
