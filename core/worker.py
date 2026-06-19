@@ -126,11 +126,22 @@ class AutomationWorker(QThread):
             pass
 
     def _cleanup_profile(self, user_data_dir):
-        """Agresif membersihkan file sampah/lock yang membuat browser gagal launch."""
+        """SUPER Agresif membersihkan file sampah/lock yang membuat browser gagal launch."""
+        import shutil
+        import glob
+        import stat
+        
         if not os.path.exists(user_data_dir):
             return
             
-        print(f"[Worker] Cleaning up profile: {user_data_dir}")
+        print(f"[Worker] SUPER Cleaning up profile: {user_data_dir}")
+        
+        # Function to make files writable
+        def make_writable(path):
+            try:
+                os.chmod(path, stat.S_IWUSR | stat.S_IWGRP | stat.S_IWOTH | stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH)
+            except:
+                pass
         
         # 1. File lock standar Chromium
         lock_patterns = [
@@ -139,7 +150,8 @@ class AutomationWorker(QThread):
             "SingletonCookie",
             "lock",
             "LOCK",
-            "*.lock"
+            "*.lock",
+            "*.tmp"
         ]
         
         # 2. Folder cache yang sering korup
@@ -149,38 +161,54 @@ class AutomationWorker(QThread):
             os.path.join(user_data_dir, "Default", "GPUCache"),
             os.path.join(user_data_dir, "ShaderCache"),
             os.path.join(user_data_dir, "GrShaderCache"),
+            os.path.join(user_data_dir, "Default", "Service Worker"),
+            os.path.join(user_data_dir, "Default", "DawnWebGPUCache"),
         ]
-
-        import shutil
-        import glob
 
         # Hapus file lock di root profile
         for pattern in lock_patterns:
             for f in glob.glob(os.path.join(user_data_dir, pattern)):
                 try:
+                    make_writable(f)
                     if os.path.isfile(f) or os.path.islink(f):
                         os.remove(f)
                         print(f"[Worker] Removed lock file: {f}")
-                except:
-                    pass
+                except Exception as e:
+                    print(f"[Worker] Failed to remove {f}: {e}")
 
         # Hapus folder cache
         for folder in cache_folders:
             try:
                 if os.path.exists(folder):
+                    # Make sure all files are writable
+                    for root, dirs, files in os.walk(folder):
+                        for file in files:
+                            file_path = os.path.join(root, file)
+                            try:
+                                make_writable(file_path)
+                            except:
+                                pass
                     shutil.rmtree(folder, ignore_errors=True)
                     print(f"[Worker] Cleared cache folder: {folder}")
-            except:
-                pass
+            except Exception as e:
+                print(f"[Worker] Failed to clear cache {folder}: {e}")
 
         # Hapus file LOCK di subfolder (seperti IndexedDB, dll)
         for root, dirs, files in os.walk(user_data_dir):
             for file in files:
-                if file.upper() == "LOCK":
+                if file.upper() in ("LOCK", ".LOCK"):
                     try:
-                        os.remove(os.path.join(root, file))
-                    except:
-                        pass
+                        file_path = os.path.join(root, file)
+                        make_writable(file_path)
+                        os.remove(file_path)
+                        print(f"[Worker] Removed lock file: {file_path}")
+                    except Exception as e:
+                        print(f"[Worker] Failed to remove lock {file}: {e}")
+                
+    def _get_temp_profile_dir(self, base_name="autoyu_temp_profile"):
+        """Membuat direktori profil sementara yang bersih."""
+        import tempfile
+        return tempfile.mkdtemp(prefix=base_name)
 
     def run(self):
         try:
@@ -281,65 +309,61 @@ class AutomationWorker(QThread):
                 }
                 print(f"[Worker] Launch args: {launch_args}")
 
-                # PRIORITAS: Langsung gunakan Chromium internal (Portable)
-                try:
-                    self.log_signal.emit("Membuka browser...")
-                    print("[Worker] Attempting Chromium (internal)...")
-                    
-                    # PRIORITAS: Gunakan executable internal jika ditemukan
-                    internal_exe = find_executable()
-                    if internal_exe:
-                        print(f"[Worker] Launching internal chromium: {internal_exe}")
-                        self.log_signal.emit(f"Memuat browser internal...")
+                # PRIORITAS: Coba semua opsi browser secara berurutan
+                browser_launched = False
+                # Try normal profile first, then temp profile if needed
+                profile_attempts = [
+                    ("Normal Profile", user_data_dir),
+                    ("Fresh Temp Profile", self._get_temp_profile_dir())
+                ]
+                
+                for profile_name, profile_path in profile_attempts:
+                    if browser_launched:
+                        break
                         
-                        # Kadang env var ini mengganggu jika kita pakai executable_path manual
-                        if "PLAYWRIGHT_BROWSERS_PATH" in os.environ:
-                            old_pw_path = os.environ.get("PLAYWRIGHT_BROWSERS_PATH")
-                            # Jangan hapus, tapi pastikan tidak konflik
+                    # Update launch args with current profile path
+                    current_launch_args_base = launch_args.copy()
+                    current_launch_args_base["user_data_dir"] = profile_path
+                        
+                    self.log_signal.emit(f"🔄 Mencoba dengan {profile_name}...")
+                    
+                    launch_attempts = [
+                        ("Internal Chromium", {"executable_path": find_executable()}),
+                        ("Playwright Default Chromium", {}),
+                        ("Google Chrome", {"channel": "chrome"}),
+                        ("Microsoft Edge", {"channel": "msedge"}),
+                    ]
+                    
+                    for browser_name, extra_args in launch_attempts:
+                        # Skip if the required argument isn't available
+                        if "executable_path" in extra_args and extra_args["executable_path"] is None:
+                            continue
                             
-                        self.context = p.chromium.launch_persistent_context(
-                            executable_path=internal_exe,
-                            **launch_args
-                        )
-                    else:
-                        print("[Worker] No internal chromium found, using default launch.")
-                        self.context = p.chromium.launch_persistent_context(**launch_args)
-                except Exception as e:
-                    err_msg = str(e).split("\n")[0]
-                    print(f"[Worker] Chromium (internal) failed: {e}")
-                    self.log_signal.emit(f"⚠️ Browser internal gagal: {err_msg[:50]}...")
-                    
-                    # Pastikan executable_path tidak mengganggu fallback
-                    launch_args.pop("executable_path", None)
-                    
-                    # FALLBACK 1: Jika Chromium internal tidak ada, coba Google Chrome PC
-                    try:
-                        self.log_signal.emit("Mencoba Google Chrome...")
-                        print("[Worker] Attempting Google Chrome...")
-                        self.context = p.chromium.launch_persistent_context(
-                            channel="chrome",
-                            **launch_args
-                        )
-                    except Exception as e2:
-                        print(f"[Worker] Google Chrome failed: {e2}")
-                        # Pastikan channel tidak mengganggu fallback berikutnya
-                        launch_args.pop("channel", None)
-                        
-                        # FALLBACK 2: Gunakan Edge
                         try:
-                            self.log_signal.emit("Mencoba Microsoft Edge...")
-                            print("[Worker] Attempting Microsoft Edge...")
-                            self.context = p.chromium.launch_persistent_context(
-                                channel="msedge",
-                                **launch_args
-                            )
-                        except Exception as e3:
-                            print(f"[Worker] All browser fallbacks failed: {e3}")
-                            error_msg3 = str(e3).split('\n')[0]
-                            self.log_signal.emit(f"❌ CRITICAL ERROR: Browser tidak ditemukan ({error_msg3})")
-                            self.log_signal.emit("Pastikan Google Chrome atau Microsoft Edge sudah terinstal.")
-                            self.finished_signal.emit()
-                            return
+                            self.log_signal.emit(f"Membuka {browser_name} ({profile_name})...")
+                            print(f"[Worker] Attempting {browser_name} with {profile_name} at {profile_path}...")
+                            
+                            # Merge extra args into launch args
+                            current_launch_args = current_launch_args_base.copy()
+                            current_launch_args.update(extra_args)
+                            
+                            # Launch the browser
+                            self.context = p.chromium.launch_persistent_context(**current_launch_args)
+                            print(f"[Worker] Success: {browser_name} launched with {profile_name}!")
+                            self.log_signal.emit(f"✅ {browser_name} berhasil dibuka dengan {profile_name}!")
+                            browser_launched = True
+                            break
+                        except Exception as e:
+                            err_msg = str(e).split("\n")[0]
+                            print(f"[Worker] {browser_name} failed with {profile_name}: {e}")
+                            self.log_signal.emit(f"⚠️ {browser_name} gagal: {err_msg[:60]}...")
+                
+                if not browser_launched:
+                    self.log_signal.emit("❌ CRITICAL ERROR: Tidak dapat menemukan browser apapun!")
+                    self.log_signal.emit("Pastikan Google Chrome, Microsoft Edge, atau Playwright Chromium sudah terinstal.")
+                    self.log_signal.emit("Untuk menginstal Playwright Chromium, jalankan: playwright install chromium")
+                    self.finished_signal.emit()
+                    return
 
                 # Ensure context is valid
                 if not self.context:
