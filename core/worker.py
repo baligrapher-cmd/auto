@@ -126,22 +126,11 @@ class AutomationWorker(QThread):
             pass
 
     def _cleanup_profile(self, user_data_dir):
-        """SUPER Agresif membersihkan file sampah/lock yang membuat browser gagal launch."""
-        import shutil
-        import glob
-        import stat
-        
+        """Agresif membersihkan file sampah/lock yang membuat browser gagal launch."""
         if not os.path.exists(user_data_dir):
             return
             
-        print(f"[Worker] SUPER Cleaning up profile: {user_data_dir}")
-        
-        # Function to make files writable
-        def make_writable(path):
-            try:
-                os.chmod(path, stat.S_IWUSR | stat.S_IWGRP | stat.S_IWOTH | stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH)
-            except:
-                pass
+        print(f"[Worker] Cleaning up profile: {user_data_dir}")
         
         # 1. File lock standar Chromium
         lock_patterns = [
@@ -150,8 +139,7 @@ class AutomationWorker(QThread):
             "SingletonCookie",
             "lock",
             "LOCK",
-            "*.lock",
-            "*.tmp"
+            "*.lock"
         ]
         
         # 2. Folder cache yang sering korup
@@ -161,54 +149,38 @@ class AutomationWorker(QThread):
             os.path.join(user_data_dir, "Default", "GPUCache"),
             os.path.join(user_data_dir, "ShaderCache"),
             os.path.join(user_data_dir, "GrShaderCache"),
-            os.path.join(user_data_dir, "Default", "Service Worker"),
-            os.path.join(user_data_dir, "Default", "DawnWebGPUCache"),
         ]
+
+        import shutil
+        import glob
 
         # Hapus file lock di root profile
         for pattern in lock_patterns:
             for f in glob.glob(os.path.join(user_data_dir, pattern)):
                 try:
-                    make_writable(f)
                     if os.path.isfile(f) or os.path.islink(f):
                         os.remove(f)
                         print(f"[Worker] Removed lock file: {f}")
-                except Exception as e:
-                    print(f"[Worker] Failed to remove {f}: {e}")
+                except:
+                    pass
 
         # Hapus folder cache
         for folder in cache_folders:
             try:
                 if os.path.exists(folder):
-                    # Make sure all files are writable
-                    for root, dirs, files in os.walk(folder):
-                        for file in files:
-                            file_path = os.path.join(root, file)
-                            try:
-                                make_writable(file_path)
-                            except:
-                                pass
                     shutil.rmtree(folder, ignore_errors=True)
                     print(f"[Worker] Cleared cache folder: {folder}")
-            except Exception as e:
-                print(f"[Worker] Failed to clear cache {folder}: {e}")
+            except:
+                pass
 
         # Hapus file LOCK di subfolder (seperti IndexedDB, dll)
         for root, dirs, files in os.walk(user_data_dir):
             for file in files:
-                if file.upper() in ("LOCK", ".LOCK"):
+                if file.upper() == "LOCK":
                     try:
-                        file_path = os.path.join(root, file)
-                        make_writable(file_path)
-                        os.remove(file_path)
-                        print(f"[Worker] Removed lock file: {file_path}")
-                    except Exception as e:
-                        print(f"[Worker] Failed to remove lock {file}: {e}")
-                
-    def _get_temp_profile_dir(self, base_name="autoyu_temp_profile"):
-        """Membuat direktori profil sementara yang bersih."""
-        import tempfile
-        return tempfile.mkdtemp(prefix=base_name)
+                        os.remove(os.path.join(root, file))
+                    except:
+                        pass
 
     def run(self):
         try:
@@ -311,52 +283,36 @@ class AutomationWorker(QThread):
 
                 # PRIORITAS: Coba semua opsi browser secara berurutan
                 browser_launched = False
-                # Try normal profile first, then temp profile if needed
-                profile_attempts = [
-                    ("Normal Profile", user_data_dir),
-                    ("Fresh Temp Profile", self._get_temp_profile_dir())
+                launch_attempts = [
+                    ("Internal Chromium", {"executable_path": find_executable()}),
+                    ("Playwright Default Chromium", {}),
+                    ("Google Chrome", {"channel": "chrome"}),
+                    ("Microsoft Edge", {"channel": "msedge"}),
                 ]
                 
-                for profile_name, profile_path in profile_attempts:
-                    if browser_launched:
+                for browser_name, extra_args in launch_attempts:
+                    # Skip if the required argument isn't available
+                    if "executable_path" in extra_args and extra_args["executable_path"] is None:
+                        continue
+                        
+                    try:
+                        self.log_signal.emit(f"Membuka {browser_name}...")
+                        print(f"[Worker] Attempting {browser_name}...")
+                        
+                        # Merge extra args into launch args
+                        current_launch_args = launch_args.copy()
+                        current_launch_args.update(extra_args)
+                        
+                        # Launch the browser
+                        self.context = p.chromium.launch_persistent_context(**current_launch_args)
+                        print(f"[Worker] Success: {browser_name} launched!")
+                        self.log_signal.emit(f"✅ {browser_name} berhasil dibuka!")
+                        browser_launched = True
                         break
-                        
-                    # Update launch args with current profile path
-                    current_launch_args_base = launch_args.copy()
-                    current_launch_args_base["user_data_dir"] = profile_path
-                        
-                    self.log_signal.emit(f"🔄 Mencoba dengan {profile_name}...")
-                    
-                    launch_attempts = [
-                        ("Internal Chromium", {"executable_path": find_executable()}),
-                        ("Playwright Default Chromium", {}),
-                        ("Google Chrome", {"channel": "chrome"}),
-                        ("Microsoft Edge", {"channel": "msedge"}),
-                    ]
-                    
-                    for browser_name, extra_args in launch_attempts:
-                        # Skip if the required argument isn't available
-                        if "executable_path" in extra_args and extra_args["executable_path"] is None:
-                            continue
-                            
-                        try:
-                            self.log_signal.emit(f"Membuka {browser_name} ({profile_name})...")
-                            print(f"[Worker] Attempting {browser_name} with {profile_name} at {profile_path}...")
-                            
-                            # Merge extra args into launch args
-                            current_launch_args = current_launch_args_base.copy()
-                            current_launch_args.update(extra_args)
-                            
-                            # Launch the browser
-                            self.context = p.chromium.launch_persistent_context(**current_launch_args)
-                            print(f"[Worker] Success: {browser_name} launched with {profile_name}!")
-                            self.log_signal.emit(f"✅ {browser_name} berhasil dibuka dengan {profile_name}!")
-                            browser_launched = True
-                            break
-                        except Exception as e:
-                            err_msg = str(e).split("\n")[0]
-                            print(f"[Worker] {browser_name} failed with {profile_name}: {e}")
-                            self.log_signal.emit(f"⚠️ {browser_name} gagal: {err_msg[:60]}...")
+                    except Exception as e:
+                        err_msg = str(e).split("\n")[0]
+                        print(f"[Worker] {browser_name} failed: {e}")
+                        self.log_signal.emit(f"⚠️ {browser_name} gagal: {err_msg[:60]}...")
                 
                 if not browser_launched:
                     self.log_signal.emit("❌ CRITICAL ERROR: Tidak dapat menemukan browser apapun!")
@@ -523,14 +479,26 @@ class AutomationWorker(QThread):
                                 try:
                                     token_dir = os.path.join(base_local, "trackers")
                                     os.makedirs(token_dir, exist_ok=True)
-                                    metadata_file = os.path.join(token_dir, "api_metadata.json")
+                                    
+                                    # Get account name from config
+                                    account_name = str(self.config.get("current_account") or "").strip()
+                                    
+                                    # List of metadata files to update (account-specific first, then main)
+                                    metadata_files = []
+                                    if account_name:
+                                        metadata_files.append(os.path.join(token_dir, f"api_metadata_{account_name}.json"))
+                                    metadata_files.append(os.path.join(token_dir, "api_metadata.json"))
+                                    
+                                    # Load existing data from the first available metadata file
                                     existing = {}
-                                    if os.path.exists(metadata_file):
-                                        try:
-                                            with open(metadata_file, "r", encoding="utf-8") as f:
-                                                existing = json.load(f) or {}
-                                        except Exception:
-                                            existing = {}
+                                    for f in metadata_files:
+                                        if os.path.exists(f):
+                                            try:
+                                                with open(f, "r", encoding="utf-8") as f_obj:
+                                                    existing = json.load(f_obj) or {}
+                                                break
+                                            except Exception:
+                                                continue
                                     
                                     # Update with mutual exclusion
                                     if is_tree:
@@ -540,8 +508,10 @@ class AutomationWorker(QThread):
                                         existing["location_id"] = meta["location_id"]
                                         existing.pop("tree_id", None)
 
-                                    with open(metadata_file, "w", encoding="utf-8") as f:
-                                        json.dump(existing, f)
+                                    # Save to all metadata files
+                                    for metadata_file in metadata_files:
+                                        with open(metadata_file, "w", encoding="utf-8") as f:
+                                            json.dump(existing, f, indent=2)
                                 except Exception:
                                     pass
                         except Exception:
@@ -647,22 +617,44 @@ class AutomationWorker(QThread):
                                     try:
                                         tracker_dir = os.path.join(get_app_data_dir(), "trackers")
                                         os.makedirs(tracker_dir, exist_ok=True)
-                                        # Gunakan file spesifik per akun agar tidak tertukar
-                                        metadata_path = os.path.join(tracker_dir, f"api_metadata_{account_name}.json")
+                                        
+                                        # Load existing metadata (account-specific first, then main)
+                                        existing_meta = {}
+                                        metadata_paths = [
+                                            os.path.join(tracker_dir, f"api_metadata_{account_name}.json"),
+                                            os.path.join(tracker_dir, "api_metadata.json")
+                                        ]
+                                        for path in metadata_paths:
+                                            if os.path.exists(path):
+                                                try:
+                                                    with open(path, "r", encoding="utf-8") as f:
+                                                        loaded = json.load(f)
+                                                        if loaded:
+                                                            existing_meta = loaded
+                                                            break
+                                                except:
+                                                    continue
                                         
                                         # Format data sesuai kebutuhan UI
                                         # PENTING: Jika ditangkap dari sniffing web, simpan sebagai _name agar di-load UI dengan benar
                                         final_meta = {
-                                            "price": captured_meta.get("price", ""),
-                                            "desc": captured_meta.get("desc", ""),
-                                            "fototree_name": captured_meta.get("fototree", ""),
-                                            "location_name": captured_meta.get("location", ""),
+                                            "price": captured_meta.get("price", "") or existing_meta.get("price", ""),
+                                            "desc": captured_meta.get("desc", "") or existing_meta.get("desc", ""),
+                                            "fototree_name": captured_meta.get("fototree", "") or existing_meta.get("fototree_name", ""),
+                                            "location_name": captured_meta.get("location", "") or existing_meta.get("location_name", ""),
+                                            "tree_id": existing_meta.get("tree_id", ""),
+                                            "location_id": existing_meta.get("location_id", ""),
                                             "updated_at": int(time.time()),
                                             "source": "manual_setup_capture"
                                         }
                                         
-                                        with open(metadata_path, "w", encoding="utf-8") as f:
-                                            json.dump(final_meta, f, indent=2, ensure_ascii=False)
+                                        # Save to account-specific and main metadata file
+                                        for path in [
+                                            os.path.join(tracker_dir, f"api_metadata_{account_name}.json"),
+                                            os.path.join(tracker_dir, "api_metadata.json")
+                                        ]:
+                                            with open(path, "w", encoding="utf-8") as f:
+                                                json.dump(final_meta, f, indent=2, ensure_ascii=False)
                                     except Exception as e:
                                         print(f"Error saving captured metadata: {e}")
 

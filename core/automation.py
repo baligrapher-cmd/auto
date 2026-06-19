@@ -496,20 +496,27 @@ class TabAutomation:
                             try:
                                 from core.license import get_app_data_dir, get_app_data_dir_by_name
                                 metadata_targets = [os.path.join(get_app_data_dir(), "trackers", "api_metadata.json")]
+                                # Also save to account-specific metadata file
+                                account_name = str(self.config.get("current_account") or "").strip()
+                                if account_name:
+                                    metadata_targets.append(os.path.join(get_app_data_dir(), "trackers", f"api_metadata_{account_name}.json"))
                                 if self.config.get("setup_ultra"):
                                     metadata_targets.append(os.path.join(get_app_data_dir_by_name("AutoYuUltra"), "trackers", "api_metadata.json"))
                             except:
                                 metadata_targets = []
 
+                            # Load existing metadata (prefer account-specific first)
                             existing_meta = {}
-                            for metadata_file in metadata_targets[:1]:
+                            for metadata_file in metadata_targets:
                                 if os.path.exists(metadata_file):
                                     try:
-                                        with open(metadata_file, "r") as f:
-                                            existing_meta = json.load(f)
+                                        with open(metadata_file, "r", encoding="utf-8") as f:
+                                            loaded = json.load(f)
+                                            if loaded:
+                                                existing_meta = loaded
+                                                break  # Stop at the first existing file
                                     except:
-                                        existing_meta = {}
-                                break
+                                        continue
                             
                             # USER FIX: Implementasi Mutual Exclusion (Isi Salah Satu)
                             # Jika menangkap tree_id, maka location_id harus dibersihkan, dan sebaliknya.
@@ -532,8 +539,8 @@ class TabAutomation:
                                 for metadata_file in metadata_targets:
                                     try:
                                         os.makedirs(os.path.dirname(metadata_file), exist_ok=True)
-                                        with open(metadata_file, "w") as f:
-                                            json.dump(existing_meta, f)
+                                        with open(metadata_file, "w", encoding="utf-8") as f:
+                                            json.dump(existing_meta, f, indent=2)
                                     except:
                                         pass
                     except:
@@ -1407,55 +1414,56 @@ class TabAutomation:
             # WAIT_PREVIEW
             # -------------------------------------------------
             elif self.state == AutoState.WAIT_PREVIEW:
-                # Menunggu pratinjau muncul atau dialihkan ke halaman edit
+                # Menunggu pratinjau muncul dan kompresi selesai
                 url = self.page.url
                 video_count = 0
                 foto_count = 0
+                compressing_count = 0
                 try:
                     video_count = self.page.locator(SELECTORS["video_preview_ready"]).count()
                     foto_count = self.page.locator(SELECTORS["preview_ready"]).count()
+                    compressing_count = self.page.locator(SELECTORS["compressing"]).count()
                 except:
                     pass
                 
-                # Check for "Selanjutnya" button even if no preview
+                # Cek apakah masih ada kompresi yang berlangsung
+                still_compressing = compressing_count > 0
+                
+                # Check for "Selanjutnya" button, price input, or edit url
+                next_btn_visible = False
+                price_input_visible = False
+                edit_url = "edit" in url or "send-to-face" in url
+                
                 try:
                     next_btn = self.page.locator(SELECTORS["btn_next"]).first
-                    if next_btn.is_visible(timeout=500):
-                        # self.log(f"Memproses tahap berikutnya...")
-                        if self.global_lock.get('injector') == self.tab_id:
-                            self.global_lock['injector'] = None
-                        self.compression_done = True
-                        self.state = AutoState.WAIT_METADATA_CONTAINER
-                        self.state_start_time = time.time()
-                        return
+                    next_btn_visible = next_btn.is_visible(timeout=500)
                 except:
                     pass
 
-                # Check if price_input is already visible (skip preview entirely)
                 try:
                     price_input = self.page.locator(SELECTORS["price_input"]).first
-                    if price_input.count() > 0 and price_input.is_visible(timeout=500):
-                        if self.global_lock.get('injector') == self.tab_id:
-                            self.global_lock['injector'] = None
-                        self.compression_done = True
-                        self.state = AutoState.FILL_METADATA
-                        self.state_start_time = time.time()
-                        return True
+                    price_input_visible = price_input.count() > 0 and price_input.is_visible(timeout=500)
                 except:
                     pass
-
-                if "edit" in url or "send-to-face" in url:
+                
+                # Tentukan apakah bisa lanjut:
+                # - Tidak ada lagi teks "Mengompres"
+                # - DAN (ada preview, atau next button, atau price input, atau di halaman edit, atau timeout)
+                can_proceed = False
+                if not still_compressing:
+                    if (video_count > 0 or foto_count > 0) or next_btn_visible or price_input_visible or edit_url or elapsed > 120:
+                        can_proceed = True
+                
+                if can_proceed:
+                    if video_count > 0 or foto_count > 0:
+                        self.log(f"✔ Konten siap.")
                     if self.global_lock.get('injector') == self.tab_id:
                         self.global_lock['injector'] = None
                     self.compression_done = True
-                    self.state = AutoState.WAIT_METADATA_CONTAINER
-                    self.state_start_time = time.time()
-                elif video_count > 0 or foto_count > 0:
-                    self.log(f"✔ Konten siap.")
-                    if self.global_lock.get('injector') == self.tab_id:
-                        self.global_lock['injector'] = None
-                    self.compression_done = True
-                    self.state = AutoState.WAIT_METADATA_CONTAINER
+                    if price_input_visible or edit_url:
+                        self.state = AutoState.FILL_METADATA
+                    else:
+                        self.state = AutoState.WAIT_METADATA_CONTAINER
                     self.state_start_time = time.time()
                 
                 # Check for upgrade modal that might block preview
@@ -1470,14 +1478,6 @@ class TabAutomation:
                     self.active_count = min(video_count if self.upload_type == "video" else foto_count, len(self.current_batch_files))
                 except:
                     pass
-
-                # Timeout super cepat: Tidak menunggu thumbnail sama sekali!
-                if elapsed > 5: # 5 detik max di WAIT_PREVIEW
-                    if self.global_lock.get('injector') == self.tab_id:
-                        self.global_lock['injector'] = None
-                    self.compression_done = True
-                    self.state = AutoState.WAIT_METADATA_CONTAINER
-                    self.state_start_time = time.time()
 
             # -------------------------------------------------
             # WAIT_METADATA_CONTAINER

@@ -84,15 +84,19 @@ def get_playwright_browser_candidates():
 
 
 def configure_playwright_browser_path():
+    print(f"DEBUG: Checking for internal browsers...", flush=True)
     candidates = get_playwright_browser_candidates()
     for candidate in candidates:
         is_valid = _looks_like_playwright_browser_root(candidate)
+        status = "✅ VALID" if is_valid else "❌ NOT FOUND"
+        print(f"DEBUG: Candidate: {candidate} -> {status}", flush=True)
+        
         if is_valid:
             os.environ["PLAYWRIGHT_BROWSERS_PATH"] = candidate
-            print(f"[Playwright] Using internal browser path: {candidate}", flush=True)
+            print(f"DEBUG: Final internal browser path set to: {candidate}", flush=True)
             return candidate
             
-    print(f"[Playwright] No internal browser found, using system default (this is normal for development)", flush=True)
+    print("DEBUG: No internal browser path found, falling back to system default.", flush=True)
     return None
 
 
