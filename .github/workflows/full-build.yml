@@ -78,7 +78,11 @@ jobs:
         arch -x86_64 python3 -m venv venv_x86
         source venv_x86/bin/activate
         arch -x86_64 python -m pip install --upgrade pip setuptools wheel
-        arch -x86_64 pip install -r requirements.txt pyinstaller pillow
+        arch -x86_64 bash -c "
+          export PIP_PLATFORM=macosx_10_9_x86_64
+          export PIP_ONLY_BINARY=:all:
+          pip install --force-reinstall --no-cache-dir -r requirements.txt pyinstaller pillow
+        "
     
     - name: Install Playwright Browsers (x64 via Rosetta)
       run: |
