@@ -89,7 +89,7 @@ jobs:
       run: |
         source venv_x86/bin/activate
         python generate_icns.py || echo "ICNS generation failed"
-        pyinstaller --clean --noconfirm --distpath dist --target-architecture x86_64 AutoYuPro.spec
+        PYINSTALLER_TARGET_ARCH=x86_64 pyinstaller --clean --noconfirm --distpath dist AutoYuPro.spec
     
     - name: Bundle Browser (Mac Intel)
       run: |
