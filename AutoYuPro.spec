@@ -23,9 +23,6 @@ icon_path = os.path.join('assets', 'icon.ico')
 if not os.path.exists(icon_path):
     icon_path = 'icon.ico'
 
-import os
-target_arch = os.environ.get("PYINSTALLER_TARGET_ARCH", None)
-
 exe = EXE(
     pyz,
     a.scripts,
@@ -39,7 +36,7 @@ exe = EXE(
     console=False,
     disable_windowed_traceback=False,
     argv_emulation=False,
-    target_arch=target_arch,
+    target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
     icon=[icon_path],

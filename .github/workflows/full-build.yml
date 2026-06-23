@@ -63,38 +63,29 @@ jobs:
 
   # --- MAC INTEL BUILD ---
   build-mac-intel:
-    runs-on: macos-14
+    runs-on: macos-13
     steps:
     - uses: actions/checkout@v4
     
-    - name: Set up Python (x64)
+    - name: Set up Python
       uses: actions/setup-python@v5
       with:
         python-version: '3.11'
-        architecture: 'x64'
     
-    - name: Install Dependencies (x64 via Rosetta)
+    - name: Install Dependencies
       run: |
-        arch -x86_64 python3 -m venv venv_x86
-        source venv_x86/bin/activate
-        arch -x86_64 python -m pip install --upgrade pip setuptools wheel
-        arch -x86_64 bash -c "
-          export PIP_PLATFORM=macosx_10_9_x86_64
-          export PIP_ONLY_BINARY=:all:
-          pip install --force-reinstall --no-cache-dir -r requirements.txt pyinstaller pillow
-        "
+        python -m pip install --upgrade pip setuptools wheel
+        pip install -r requirements.txt pyinstaller pillow
     
-    - name: Install Playwright Browsers (x64 via Rosetta)
+    - name: Install Playwright Browsers
       run: |
-        source venv_x86/bin/activate
         export PLAYWRIGHT_BROWSERS_PATH=$PWD/pw-browsers
-        arch -x86_64 python -m playwright install chromium chromium-headless-shell ffmpeg
+        python -m playwright install chromium chromium-headless-shell ffmpeg
     
-    - name: Build with PyInstaller (x64 via Rosetta)
+    - name: Build with PyInstaller
       run: |
-        source venv_x86/bin/activate
-        arch -x86_64 python generate_icns.py || echo "ICNS generation failed"
-        arch -x86_64 bash -c "PYINSTALLER_TARGET_ARCH=x86_64 pyinstaller --clean --noconfirm --distpath dist AutoYuPro.spec"
+        python generate_icns.py || echo "ICNS generation failed"
+        pyinstaller --clean --noconfirm --distpath dist AutoYuPro.spec
     
     - name: Bundle Browser (Mac Intel)
       run: |
