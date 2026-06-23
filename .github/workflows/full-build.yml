@@ -95,14 +95,16 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # Intel Mac Build (macos-14 with arch -x86_64)
-          - os: macos-14
+          # Intel Mac Build (native x64 runner)
+          - os: macos-15-intel
             arch_env: x86_64
+            python_arch: x64
             label: Intel
 
-          # Apple Silicon Build (Free runner, faster)
-          - os: macos-14
+          # Apple Silicon Build (native arm64 runner)
+          - os: macos-15
             arch_env: arm64
+            python_arch: arm64
             label: AppleSilicon
 
     steps:
@@ -112,21 +114,20 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
+          python-version: '3.12.10'
+          architecture: ${{ matrix.python_arch }}
           cache: 'pip'
-          architecture: ${{ matrix.arch_env == 'x86_64' && 'x64' || 'arm64' }}
+
+      - name: Show Python Runtime
+        run: |
+          python -VV
+          python -c "import platform, sys; print(platform.platform()); print(platform.machine()); print(sys.executable)"
 
       - name: Install Dependencies
         run: |
-          if [ "${{ matrix.arch_env }}" = "x86_64" ]; then
-            python -m pip install --upgrade pip
-            pip install --platform macosx_10_9_x86_64 --only-binary=:all: -r requirements.txt
-            pip install --platform macosx_10_9_x86_64 --only-binary=:all: pyinstaller pillow playwright
-          else
-            python -m pip install --upgrade pip
-            pip install -r requirements.txt
-            pip install pyinstaller pillow playwright
-          fi
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+          python -m pip install pyinstaller pillow playwright
 
       - name: Create macOS Icon
         run: |
