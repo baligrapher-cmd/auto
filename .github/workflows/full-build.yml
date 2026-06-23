@@ -58,33 +58,33 @@ jobs:
 
   # --- MAC INTEL BUILD ---
   build-mac-intel:
-    runs-on: macos-13
+    runs-on: macos-14
     steps:
     - uses: actions/checkout@v4
-    - name: Set up Python (x64)
+    
+    - name: Set up Python
       uses: actions/setup-python@v5
       with:
         python-version: '3.11'
-        architecture: 'x64'
     
-    - name: Install Dependencies (x64)
+    - name: Install Dependencies (x64 via Rosetta)
       run: |
-        python -m venv venv
-        source venv/bin/activate
+        arch -x86_64 python3 -m venv venv_x86
+        source venv_x86/bin/activate
         python -m pip install --upgrade pip setuptools wheel
         pip install -r requirements.txt pyinstaller pillow
     
-    - name: Install Playwright Browsers (x64)
+    - name: Install Playwright Browsers (x64 via Rosetta)
       run: |
-        source venv/bin/activate
+        source venv_x86/bin/activate
         export PLAYWRIGHT_BROWSERS_PATH=$PWD/pw-browsers
         python -m playwright install chromium chromium-headless-shell ffmpeg
     
-    - name: Build with PyInstaller (x64)
+    - name: Build with PyInstaller (x64 via Rosetta)
       run: |
-        source venv/bin/activate
+        source venv_x86/bin/activate
         python generate_icns.py || echo "ICNS generation failed"
-        pyinstaller --clean --noconfirm --distpath dist --target-architecture x86_64 AutoYuPro.spec
+        pyinstaller --clean --noconfirm --distpath dist AutoYuPro.spec
     
     - name: Bundle Browser (Mac Intel)
       run: |
