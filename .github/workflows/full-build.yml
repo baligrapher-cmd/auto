@@ -95,8 +95,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # Intel Mac Build (macOS 14 with x86_64)
-          - os: macos-14
+          # Intel Mac Build (Free runner, slower)
+          - os: macos-13
             arch_env: x86_64
             label: Intel
 
@@ -114,7 +114,6 @@ jobs:
         with:
           python-version: '3.10'
           cache: 'pip'
-          architecture: ${{ matrix.arch_env == 'x86_64' && 'x64' || 'arm64' }}
 
       - name: Install Dependencies
         run: |
