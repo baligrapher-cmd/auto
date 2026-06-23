@@ -151,7 +151,6 @@ jobs:
             find dist/AutoYuPro.app/Contents/Resources/browsers -name "obj" -type d -exec rm -rf {} +
             find dist/AutoYuPro.app/Contents/Resources/browsers -name "gen" -type d -exec rm -rf {} +
           fi
-          strip -x dist/AutoYuPro.app/Contents/MacOS/AutoYuPro || true
 
       - name: Smoke Test (macOS Pro)
         run: |

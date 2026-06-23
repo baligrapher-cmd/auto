@@ -57,6 +57,28 @@ class LiteWindow(MainWindow):
         self.tabs_spin.setEnabled(True)
         self.batch_spin.setEnabled(True)
         
+        # Batasi jumlah tab maksimal sesuai RAM untuk stabilitas (Lite khusus)
+        specs = self.detect_system_specs()
+        max_lite_tabs = 4  # Default jika gagal deteksi
+        if specs:
+            ram_gb = specs["ram_gb"]
+            if ram_gb <= 4:
+                max_lite_tabs = 2
+            elif ram_gb <= 8:
+                max_lite_tabs = 6
+            elif ram_gb <= 16:
+                max_lite_tabs = 10
+            else:
+                max_lite_tabs = 15
+        
+        # Terapkan batas ke spinbox
+        self.tabs_spin.setRange(1, max_lite_tabs)
+        # Jika nilai saat ini melebihi batas, turunkan ke batas maksimal
+        current_tabs = self.tabs_spin.value()
+        if current_tabs > max_lite_tabs:
+            self.tabs_spin.setValue(max_lite_tabs)
+            self.log_message(f"ℹ️ Jumlah tab disesuaikan ke {max_lite_tabs} untuk stabilitas sistem (RAM: {specs['ram_gb']} GB).")
+        
         # Kunci mode upload ke SAFE untuk stabilitas di versi Lite
         self.radio_safe.setChecked(True)
         self.radio_turbo.setEnabled(False)
@@ -104,6 +126,11 @@ class LiteWindow(MainWindow):
         self.fototree_input.textChanged.connect(self._auto_save_lite_settings)
         self.location_input.textChanged.connect(self._auto_save_lite_settings)
         self.desc_input.textChanged.connect(self._auto_save_lite_settings)
+        
+        # Reconnect Setup Metadata button explicitly for Lite
+        try: self.btn_setup_metadata.clicked.disconnect()
+        except: pass
+        self.btn_setup_metadata.clicked.connect(self.on_setup_metadata_clicked)
         
         # Karena apply_saved_settings dioverride, pastikan sinyal akun tetap tersambung.
         # Gunakan QTimer agar UI benar-benar siap sebelum menyambungkan sinyal
@@ -343,18 +370,27 @@ class LiteWindow(MainWindow):
             self.update_account_status("")
             self.log_message(f"✅ Akun '{name}' telah dihapus. Silakan klik 'Tambah Akun' untuk login baru.")
 
-    def on_start(self, login_only=False):
+    def on_setup_metadata_clicked(self):
+        """Override untuk memastikan setup metadata berfungsi di Lite."""
+        print(f"[LiteWindow] Setup Metadata button clicked!")
+        if not self.account_combo.currentText():
+            self.show_custom_message("Akun Diperlukan", "Pilih atau tambah akun Fotoyu terlebih dahulu sebelum setup metadata.", "warning")
+            return
+        print(f"[LiteWindow] Calling on_start with setup_metadata_first=True")
+        self.on_start(login_only=True, setup_metadata_first=True)
+
+    def on_start(self, login_only=False, setup_metadata_first=False):
         """Memastikan fungsi on_start dipanggil dari kelas induk (MainWindow)."""
         # 0. License Check - Lite Version
         is_valid, status_code, _, _ = check_license(app_type="lite")
         if not is_valid:
             from PySide6.QtWidgets import QMessageBox
-            QMessageBox.critical(self, "Lisensi Tidak Valid", f"Lisensi LITE Anda tidak valid atau telah kedaluwarsa (Code: {status_code}).")
+            QMessageBox.critical(self, "Lisensi Tidak Valid", f"Lisensi LITE Anda tidak valid atau telah kadaluarsa (Code: {status_code}).")
             return
 
         # Sinkronkan config UI ke variabel lokal sebelum memanggil super().on_start()
         # Hal ini krusial karena versi Lite menyembunyikan beberapa elemen UI
-        print(f"[LiteWindow] on_start called, login_only={login_only}")
+        print(f"[LiteWindow] on_start called, login_only={login_only}, setup_metadata_first={setup_metadata_first}")
         from gui.main_window import load_settings, save_settings
         config = self.get_current_config()
         if config:
@@ -365,7 +401,7 @@ class LiteWindow(MainWindow):
         else:
             print("[LiteWindow] WARNING: get_current_config() returned None")
             
-        super().on_start(login_only)
+        super().on_start(login_only, setup_metadata_first)
 
     def on_add_account(self):
         """Izinkan tambah akun hanya jika masih kosong."""
