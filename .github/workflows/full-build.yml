@@ -44,6 +44,11 @@ jobs:
             Get-ChildItem -Path "$APP_PATH\browsers" -Filter "*.gz" -Recurse | Remove-Item
         }
     
+    - name: Smoke Test (Windows)
+      run: |
+        cd dist\AutoYuPro
+        .\AutoYuPro.exe --smoke-test
+    
     - name: Create Release Package
       run: |
         cd dist
@@ -95,6 +100,10 @@ jobs:
         find "$APP_PATH/Contents/Resources/browsers" -name "*.gz" -delete
         codesign --force --deep --sign - "$APP_PATH"
     
+    - name: Smoke Test (Mac Intel)
+      run: |
+        ./dist/AutoYuPro.app/Contents/MacOS/AutoYuPro --smoke-test
+    
     - name: Create Release Package
       run: |
         cd dist
@@ -140,6 +149,10 @@ jobs:
         find "$APP_PATH/Contents/Resources/browsers" -name "*.zip" -delete
         find "$APP_PATH/Contents/Resources/browsers" -name "*.gz" -delete
         codesign --force --deep --sign - "$APP_PATH"
+    
+    - name: Smoke Test (Mac Silicon)
+      run: |
+        ./dist/AutoYuPro.app/Contents/MacOS/AutoYuPro --smoke-test
     
     - name: Create Release Package
       run: |

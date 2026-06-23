@@ -20,6 +20,20 @@ def get_resource_path(relative_path):
     return os.path.join(base_path, relative_path)
 
 def main():
+    # Check for smoke test flag
+    if "--smoke-test" in sys.argv:
+        print("Running smoke test...")
+        # Test imports
+        import gui.main_window
+        import core.worker
+        import core.playwright_runtime
+        # Configure playwright
+        configure_playwright_browser_path()
+        print("✓ All imports successful")
+        print("✓ Playwright configured")
+        print("Smoke test passed!")
+        sys.exit(0)
+        
     if "QT_SCALE_FACTOR" not in os.environ:
         os.environ["QT_SCALE_FACTOR"] = "0.9"
     # Fix Taskbar Icon for Windows
