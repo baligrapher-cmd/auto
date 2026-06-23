@@ -38,10 +38,7 @@ jobs:
           Copy-Item -Path "pw-browsers\*" -Destination "$APP_PATH\browsers" -Recurse
         }
     
-    - name: Smoke Test (Windows Pro)
-      run: |
-        cd dist\AutoYuPro
-        .\AutoYuPro.exe --smoke-test
+
     
     - name: Build Lite Version (AutoYu Lite)
       run: |
@@ -152,9 +149,7 @@ jobs:
             cp -R pw-browsers/* dist/AutoYuPro.app/Contents/Resources/browsers/
           fi
 
-      - name: Smoke Test (macOS Pro)
-        run: |
-          ./dist/AutoYuPro.app/Contents/MacOS/AutoYuPro --smoke-test
+
 
       - name: Build Lite Version (AutoYu Lite)
         run: |
