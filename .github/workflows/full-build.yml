@@ -21,14 +21,15 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt pyinstaller pillow
     
-    - name: Run Smoke Test (Development Mode)
-      run: |
-        python smoke_test.py
-    
     - name: Install Playwright Browsers (Internal)
       run: |
         $env:PLAYWRIGHT_BROWSERS_PATH = "$PWD\pw-browsers"
         python -m playwright install chromium chromium-headless-shell ffmpeg
+    
+    - name: Run Smoke Test (Development Mode)
+      run: |
+        $env:PLAYWRIGHT_BROWSERS_PATH = "$PWD\pw-browsers"
+        python smoke_test.py
     
     - name: Build with PyInstaller
       run: |
@@ -78,16 +79,17 @@ jobs:
         python -m pip install --upgrade pip setuptools wheel
         pip install -r requirements.txt pyinstaller pillow
     
-    - name: Run Smoke Test (Intel x64 via Rosetta)
-      run: |
-        source venv_x86/bin/activate
-        python smoke_test.py
-    
     - name: Install Playwright Browsers (x64 via Rosetta)
       run: |
         source venv_x86/bin/activate
         export PLAYWRIGHT_BROWSERS_PATH=$PWD/pw-browsers
         python -m playwright install chromium chromium-headless-shell ffmpeg
+    
+    - name: Run Smoke Test (Intel x64 via Rosetta)
+      run: |
+        source venv_x86/bin/activate
+        export PLAYWRIGHT_BROWSERS_PATH=$PWD/pw-browsers
+        python smoke_test.py
     
     - name: Build with PyInstaller (x64 via Rosetta)
       run: |
@@ -131,14 +133,15 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt pyinstaller pillow
     
-    - name: Run Smoke Test (Apple Silicon)
-      run: |
-        python smoke_test.py
-    
     - name: Install Playwright Browsers (arm64)
       run: |
         export PLAYWRIGHT_BROWSERS_PATH=$PWD/pw-browsers
         python -m playwright install chromium chromium-headless-shell ffmpeg
+    
+    - name: Run Smoke Test (Apple Silicon)
+      run: |
+        export PLAYWRIGHT_BROWSERS_PATH=$PWD/pw-browsers
+        python smoke_test.py
     
     - name: Build with PyInstaller (arm64)
       run: |
