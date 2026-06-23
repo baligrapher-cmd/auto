@@ -38,7 +38,10 @@ jobs:
           Copy-Item -Path "pw-browsers\*" -Destination "$APP_PATH\browsers" -Recurse
         }
     
-
+    - name: Smoke Test (Windows Pro)
+      run: |
+        cd dist\AutoYuPro
+        .\AutoYuPro.exe --smoke-test
     
     - name: Build Lite Version (AutoYu Lite)
       run: |
@@ -92,8 +95,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # Intel Mac Build (Free runner, slower)
-          - os: macos-13
+          # Intel Mac Build (macos-14 with arch -x86_64)
+          - os: macos-14
             arch_env: x86_64
             label: Intel
 
@@ -114,14 +117,23 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install pyinstaller pillow playwright
+          if [ "${{ matrix.arch_env }}" = "x86_64" ]; then
+            arch -x86_64 python -m pip install --upgrade pip
+            arch -x86_64 pip install -r requirements.txt
+            arch -x86_64 pip install pyinstaller pillow playwright
+          else
+            python -m pip install --upgrade pip
+            pip install -r requirements.txt
+            pip install pyinstaller pillow playwright
+          fi
 
       - name: Create macOS Icon
         run: |
-          # Menggunakan python untuk membuat iconset sederhana dari icon.ico
-          python -c "from PIL import Image; img = Image.open('icon.ico'); img.save('icon.png')"
+          if [ "${{ matrix.arch_env }}" = "x86_64" ]; then
+            arch -x86_64 python -c "from PIL import Image; img = Image.open('icon.ico'); img.save('icon.png')"
+          else
+            python -c "from PIL import Image; img = Image.open('icon.ico'); img.save('icon.png')"
+          fi
           mkdir -p icon.iconset
           sips -z 16 16     icon.png --out icon.iconset/icon_16x16.png
           sips -z 32 32     icon.png --out icon.iconset/icon_16x16@2x.png
@@ -138,22 +150,40 @@ jobs:
 
       - name: Install Playwright Browsers
         run: |
-          PLAYWRIGHT_BROWSERS_PATH=./pw-browsers python -m playwright install chromium
+          if [ "${{ matrix.arch_env }}" = "x86_64" ]; then
+            arch -x86_64 bash -c "PLAYWRIGHT_BROWSERS_PATH=./pw-browsers python -m playwright install chromium"
+          else
+            PLAYWRIGHT_BROWSERS_PATH=./pw-browsers python -m playwright install chromium
+          fi
 
       - name: Build Main Version (AutoYu Pro)
         run: |
-          python -m PyInstaller --clean --noconfirm AutoYuPro.spec
+          if [ "${{ matrix.arch_env }}" = "x86_64" ]; then
+            arch -x86_64 python -m PyInstaller --clean --noconfirm AutoYuPro.spec
+          else
+            python -m PyInstaller --clean --noconfirm AutoYuPro.spec
+          fi
           # Manually copy browsers to Resources to avoid PyInstaller SystemError on large binaries
           if [ -d "pw-browsers" ]; then
             mkdir -p dist/AutoYuPro.app/Contents/Resources/browsers
             cp -R pw-browsers/* dist/AutoYuPro.app/Contents/Resources/browsers/
           fi
 
-
+      - name: Smoke Test (macOS Pro)
+        run: |
+          if [ "${{ matrix.arch_env }}" = "x86_64" ]; then
+            arch -x86_64 ./dist/AutoYuPro.app/Contents/MacOS/AutoYuPro --smoke-test
+          else
+            ./dist/AutoYuPro.app/Contents/MacOS/AutoYuPro --smoke-test
+          fi
 
       - name: Build Lite Version (AutoYu Lite)
         run: |
-          python -m PyInstaller --clean --noconfirm AutoYuLite.spec
+          if [ "${{ matrix.arch_env }}" = "x86_64" ]; then
+            arch -x86_64 python -m PyInstaller --clean --noconfirm AutoYuLite.spec
+          else
+            python -m PyInstaller --clean --noconfirm AutoYuLite.spec
+          fi
           # Manually copy browsers to Resources
           if [ -d "pw-browsers" ]; then
             mkdir -p dist/AutoYuLite.app/Contents/Resources/browsers
