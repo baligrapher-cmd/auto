@@ -1,8 +1,8 @@
-name: Multi-Platform Build (Win, Mac Intel, Mac Silicon)
+name: Compile AutoYu for All Platforms
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, master ]
   workflow_dispatch:
 
 jobs:
@@ -14,67 +14,95 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: '3.11'
+        python-version: '3.10'
+        cache: 'pip'
     
     - name: Install Dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -r requirements.txt pyinstaller pillow
+        pip install -r requirements.txt
+        pip install pyinstaller pillow playwright
     
     - name: Install Playwright Browsers (Internal)
       run: |
         $env:PLAYWRIGHT_BROWSERS_PATH = "$PWD\pw-browsers"
         python -m playwright install chromium chromium-headless-shell ffmpeg
     
-    - name: Build with PyInstaller
+    - name: Build Main Version (AutoYu Pro)
       run: |
-        # Build PRO
-        pyinstaller --clean --noconfirm --distpath dist AutoYuPro.spec
-    
-    - name: Bundle Browser (Windows)
-      run: |
-        $APP_PATH = "dist\AutoYuPro"
+        pyinstaller --clean --noconfirm AutoYuPro.spec
+        # Manually copy browsers
         if (Test-Path "pw-browsers") {
-          echo "📦 Bundling browsers for Windows..."
+          $APP_PATH = "dist\AutoYuPro"
           New-Item -ItemType Directory -Force -Path "$APP_PATH\browsers"
           Copy-Item -Path "pw-browsers\*" -Destination "$APP_PATH\browsers" -Recurse
-          
-          echo "🧹 Cleaning archives..."
-          Get-ChildItem -Path "$APP_PATH\browsers" -Filter "*.zip" -Recurse | Remove-Item
-          Get-ChildItem -Path "$APP_PATH\browsers" -Filter "*.gz" -Recurse | Remove-Item
         }
     
-    - name: Smoke Test (Windows)
+    - name: Smoke Test (Windows Pro)
       run: |
         cd dist\AutoYuPro
         .\AutoYuPro.exe --smoke-test
     
-    - name: Create Release Package
+    - name: Build Lite Version (AutoYu Lite)
       run: |
-        cd dist
-        Copy-Item "..\PANDUAN_USER.txt" "AutoYuPro\"
-        Compress-Archive -Path "AutoYuPro" -DestinationPath "..\AutoYuPro-Windows.zip"
+        pyinstaller --clean --noconfirm AutoYuLite.spec
+        # Manually copy browsers
+        if (Test-Path "pw-browsers") {
+          $APP_PATH = "dist\AutoYuLite"
+          New-Item -ItemType Directory -Force -Path "$APP_PATH\browsers"
+          Copy-Item -Path "pw-browsers\*" -Destination "$APP_PATH\browsers" -Recurse
+        }
     
-    - name: Upload Artifact
+    - name: Prepare Artifacts
+      run: |
+        mkdir -p release_pro
+        mkdir -p release_lite
+        Copy-Item "PANDUAN_USER.txt" "release_pro\"
+        Copy-Item "PANDUAN_USER.txt" "release_lite\"
+        
+        # Compress Pro Version
+        if (Test-Path "dist\AutoYuPro") {
+          Copy-Item "PANDUAN_USER.txt" "dist\AutoYuPro\"
+          Compress-Archive -Path "dist\AutoYuPro" -DestinationPath "release_pro\AutoYuPro-Windows.zip"
+        }
+        
+        # Compress Lite Version
+        if (Test-Path "dist\AutoYuLite") {
+          Copy-Item "PANDUAN_USER.txt" "dist\AutoYuLite\"
+          Compress-Archive -Path "dist\AutoYuLite" -DestinationPath "release_lite\AutoYuLite-Windows.zip"
+        }
+    
+    - name: Upload Pro Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: AutoYu-Windows-Build
-        path: AutoYuPro-Windows.zip
+        name: AutoYuPro-Windows
+        path: release_pro/*
+        
+    - name: Upload Lite Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: AutoYuLite-Windows
+        path: release_lite/*
 
   # --- MAC BUILDS ---
   build-macos:
     name: Build for ${{ matrix.label }}
     runs-on: ${{ matrix.os }}
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+      ARCH: ${{ matrix.arch_env }}
     strategy:
       fail-fast: false
       matrix:
         include:
-          # Intel Mac Build
+          # Intel Mac Build (Free runner, slower)
           - os: macos-13
+            arch_env: x86_64
             label: Intel
 
-          # Apple Silicon Build
+          # Apple Silicon Build (Free runner, faster)
           - os: macos-14
+            arch_env: arm64
             label: AppleSilicon
 
     steps:
@@ -84,14 +112,14 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: '3.10'
           cache: 'pip'
 
       - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install pyinstaller pillow
+          pip install pyinstaller pillow playwright
 
       - name: Create macOS Icon
         run: |
@@ -109,39 +137,61 @@ jobs:
           sips -z 512 512   icon.png --out icon.iconset/icon_512x512.png
           sips -z 1024 1024 icon.png --out icon.iconset/icon_512x512@2x.png
           iconutil -c icns icon.iconset
-          cp icon.icns assets/icon.icns 2>/dev/null || true
+          cp icon.icns assets/icon.icns || cp icon.icns icon.icns
 
       - name: Install Playwright Browsers
         run: |
-          PLAYWRIGHT_BROWSERS_PATH=./pw-browsers python -m playwright install chromium chromium-headless-shell ffmpeg
+          PLAYWRIGHT_BROWSERS_PATH=./pw-browsers python -m playwright install chromium
 
       - name: Build Main Version (AutoYu Pro)
         run: |
-          pyinstaller --clean --noconfirm --distpath dist AutoYuPro.spec
+          python -m PyInstaller --clean --noconfirm AutoYuPro.spec
           # Manually copy browsers to Resources to avoid PyInstaller SystemError on large binaries
           if [ -d "pw-browsers" ]; then
             mkdir -p dist/AutoYuPro.app/Contents/Resources/browsers
             cp -R pw-browsers/* dist/AutoYuPro.app/Contents/Resources/browsers/
-            find dist/AutoYuPro.app/Contents/Resources/browsers -name "*.zip" -delete
-            find dist/AutoYuPro.app/Contents/Resources/browsers -name "*.gz" -delete
           fi
-          
-      - name: Smoke Test (macOS)
+
+      - name: Smoke Test (macOS Pro)
         run: |
           ./dist/AutoYuPro.app/Contents/MacOS/AutoYuPro --smoke-test
-          
-      - name: Prepare Release Package
+
+      - name: Build Lite Version (AutoYu Lite)
         run: |
-          mkdir -p release
-          cp PANDUAN_USER.txt release/
+          python -m PyInstaller --clean --noconfirm AutoYuLite.spec
+          # Manually copy browsers to Resources
+          if [ -d "pw-browsers" ]; then
+            mkdir -p dist/AutoYuLite.app/Contents/Resources/browsers
+            cp -R pw-browsers/* dist/AutoYuLite.app/Contents/Resources/browsers/
+          fi
+
+      - name: Prepare Artifacts
+        run: |
+          mkdir -p release_pro
+          mkdir -p release_lite
+          cp PANDUAN_USER.txt release_pro/
+          cp PANDUAN_USER.txt release_lite/
           
+          # Compress Pro Version
           if [ -d "dist/AutoYuPro.app" ]; then
             cp PANDUAN_USER.txt dist/AutoYuPro.app/Contents/Resources/
-            cd dist && zip -r ../release/AutoYuPro-macOS-${{ matrix.label }}.zip AutoYuPro.app && cd ..
+            cd dist && zip -r ../release_pro/AutoYuPro-${{ matrix.label }}.zip AutoYuPro.app && cd ..
+          fi
+          
+          # Compress Lite Version
+          if [ -d "dist/AutoYuLite.app" ]; then
+            cp PANDUAN_USER.txt dist/AutoYuLite.app/Contents/Resources/
+            cd dist && zip -r ../release_lite/AutoYuLite-${{ matrix.label }}.zip AutoYuLite.app && cd ..
           fi
 
       - name: Upload Pro Artifact
         uses: actions/upload-artifact@v4
         with:
           name: AutoYuPro-macOS-${{ matrix.label }}
-          path: release/*
+          path: release_pro/*
+
+      - name: Upload Lite Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: AutoYuLite-macOS-${{ matrix.label }}
+          path: release_lite/*
