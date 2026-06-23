@@ -140,11 +140,18 @@ jobs:
       - name: Build Main Version (AutoYu Pro)
         run: |
           python -m PyInstaller --clean --noconfirm AutoYuPro.spec
-          # Manually copy browsers to Resources to avoid PyInstaller SystemError on large binaries
+          # Copy only the browser runtimes we actually need, then remove bulky extras.
           if [ -d "pw-browsers" ]; then
             mkdir -p dist/AutoYuPro.app/Contents/Resources/browsers
-            cp -R pw-browsers/* dist/AutoYuPro.app/Contents/Resources/browsers/
+            find pw-browsers -maxdepth 1 -type d \( -name "chromium-*" -o -name "chromium_headless_shell-*" -o -name "ffmpeg-*" \) -exec cp -R {} dist/AutoYuPro.app/Contents/Resources/browsers/ \;
+            find dist/AutoYuPro.app/Contents/Resources/browsers -name "translations" -type d -exec rm -rf {} +
+            find dist/AutoYuPro.app/Contents/Resources/browsers -name "*.zip" -delete
+            find dist/AutoYuPro.app/Contents/Resources/browsers -name "*.gz" -delete
+            find dist/AutoYuPro.app/Contents/Resources/browsers -name "*.dSYM" -type d -exec rm -rf {} +
+            find dist/AutoYuPro.app/Contents/Resources/browsers -name "obj" -type d -exec rm -rf {} +
+            find dist/AutoYuPro.app/Contents/Resources/browsers -name "gen" -type d -exec rm -rf {} +
           fi
+          strip -x dist/AutoYuPro.app/Contents/MacOS/AutoYuPro || true
 
       - name: Smoke Test (macOS Pro)
         run: |
@@ -158,7 +165,7 @@ jobs:
           # Compress Pro Version
           if [ -d "dist/AutoYuPro.app" ]; then
             cp PANDUAN_USER.txt dist/AutoYuPro.app/Contents/Resources/
-            cd dist && zip -r ../release_pro/AutoYuPro-${{ matrix.label }}.zip AutoYuPro.app && cd ..
+            cd dist && zip -r9y ../release_pro/AutoYuPro-${{ matrix.label }}.zip AutoYuPro.app && cd ..
           fi
 
       - name: Upload Pro Artifact
