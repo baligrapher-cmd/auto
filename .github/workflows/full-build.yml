@@ -114,13 +114,14 @@ jobs:
         with:
           python-version: '3.10'
           cache: 'pip'
+          architecture: ${{ matrix.arch_env == 'x86_64' && 'x64' || 'arm64' }}
 
       - name: Install Dependencies
         run: |
           if [ "${{ matrix.arch_env }}" = "x86_64" ]; then
-            arch -x86_64 python -m pip install --upgrade pip
-            arch -x86_64 pip install -r requirements.txt
-            arch -x86_64 pip install pyinstaller pillow playwright
+            python -m pip install --upgrade pip
+            pip install --platform macosx_10_9_x86_64 --only-binary=:all: -r requirements.txt
+            pip install --platform macosx_10_9_x86_64 --only-binary=:all: pyinstaller pillow playwright
           else
             python -m pip install --upgrade pip
             pip install -r requirements.txt
@@ -129,11 +130,7 @@ jobs:
 
       - name: Create macOS Icon
         run: |
-          if [ "${{ matrix.arch_env }}" = "x86_64" ]; then
-            arch -x86_64 python -c "from PIL import Image; img = Image.open('icon.ico'); img.save('icon.png')"
-          else
-            python -c "from PIL import Image; img = Image.open('icon.ico'); img.save('icon.png')"
-          fi
+          python -c "from PIL import Image; img = Image.open('icon.ico'); img.save('icon.png')"
           mkdir -p icon.iconset
           sips -z 16 16     icon.png --out icon.iconset/icon_16x16.png
           sips -z 32 32     icon.png --out icon.iconset/icon_16x16@2x.png
@@ -150,19 +147,11 @@ jobs:
 
       - name: Install Playwright Browsers
         run: |
-          if [ "${{ matrix.arch_env }}" = "x86_64" ]; then
-            arch -x86_64 bash -c "PLAYWRIGHT_BROWSERS_PATH=./pw-browsers python -m playwright install chromium"
-          else
-            PLAYWRIGHT_BROWSERS_PATH=./pw-browsers python -m playwright install chromium
-          fi
+          PLAYWRIGHT_BROWSERS_PATH=./pw-browsers python -m playwright install chromium
 
       - name: Build Main Version (AutoYu Pro)
         run: |
-          if [ "${{ matrix.arch_env }}" = "x86_64" ]; then
-            arch -x86_64 python -m PyInstaller --clean --noconfirm AutoYuPro.spec
-          else
-            python -m PyInstaller --clean --noconfirm AutoYuPro.spec
-          fi
+          python -m PyInstaller --clean --noconfirm AutoYuPro.spec
           # Manually copy browsers to Resources to avoid PyInstaller SystemError on large binaries
           if [ -d "pw-browsers" ]; then
             mkdir -p dist/AutoYuPro.app/Contents/Resources/browsers
@@ -171,19 +160,11 @@ jobs:
 
       - name: Smoke Test (macOS Pro)
         run: |
-          if [ "${{ matrix.arch_env }}" = "x86_64" ]; then
-            arch -x86_64 ./dist/AutoYuPro.app/Contents/MacOS/AutoYuPro --smoke-test
-          else
-            ./dist/AutoYuPro.app/Contents/MacOS/AutoYuPro --smoke-test
-          fi
+          ./dist/AutoYuPro.app/Contents/MacOS/AutoYuPro --smoke-test
 
       - name: Build Lite Version (AutoYu Lite)
         run: |
-          if [ "${{ matrix.arch_env }}" = "x86_64" ]; then
-            arch -x86_64 python -m PyInstaller --clean --noconfirm AutoYuLite.spec
-          else
-            python -m PyInstaller --clean --noconfirm AutoYuLite.spec
-          fi
+          python -m PyInstaller --clean --noconfirm AutoYuLite.spec
           # Manually copy browsers to Resources
           if [ -d "pw-browsers" ]; then
             mkdir -p dist/AutoYuLite.app/Contents/Resources/browsers
