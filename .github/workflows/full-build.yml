@@ -43,33 +43,15 @@ jobs:
         cd dist\AutoYuPro
         .\AutoYuPro.exe --smoke-test
     
-    - name: Build Lite Version (AutoYu Lite)
-      run: |
-        pyinstaller --clean --noconfirm AutoYuLite.spec
-        # Manually copy browsers
-        if (Test-Path "pw-browsers") {
-          $APP_PATH = "dist\AutoYuLite"
-          New-Item -ItemType Directory -Force -Path "$APP_PATH\browsers"
-          Copy-Item -Path "pw-browsers\*" -Destination "$APP_PATH\browsers" -Recurse
-        }
-    
     - name: Prepare Artifacts
       run: |
-        mkdir -p release_pro
-        mkdir -p release_lite
+        New-Item -ItemType Directory -Force -Path "release_pro" | Out-Null
         Copy-Item "PANDUAN_USER.txt" "release_pro\"
-        Copy-Item "PANDUAN_USER.txt" "release_lite\"
         
         # Compress Pro Version
         if (Test-Path "dist\AutoYuPro") {
           Copy-Item "PANDUAN_USER.txt" "dist\AutoYuPro\"
           Compress-Archive -Path "dist\AutoYuPro" -DestinationPath "release_pro\AutoYuPro-Windows.zip"
-        }
-        
-        # Compress Lite Version
-        if (Test-Path "dist\AutoYuLite") {
-          Copy-Item "PANDUAN_USER.txt" "dist\AutoYuLite\"
-          Compress-Archive -Path "dist\AutoYuLite" -DestinationPath "release_lite\AutoYuLite-Windows.zip"
         }
     
     - name: Upload Pro Artifact
@@ -77,12 +59,6 @@ jobs:
       with:
         name: AutoYuPro-Windows
         path: release_pro/*
-        
-    - name: Upload Lite Artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: AutoYuLite-Windows
-        path: release_lite/*
 
   # --- MAC BUILDS ---
   build-macos:
@@ -174,32 +150,15 @@ jobs:
         run: |
           ./dist/AutoYuPro.app/Contents/MacOS/AutoYuPro --smoke-test
 
-      - name: Build Lite Version (AutoYu Lite)
-        run: |
-          python -m PyInstaller --clean --noconfirm AutoYuLite.spec
-          # Manually copy browsers to Resources
-          if [ -d "pw-browsers" ]; then
-            mkdir -p dist/AutoYuLite.app/Contents/Resources/browsers
-            cp -R pw-browsers/* dist/AutoYuLite.app/Contents/Resources/browsers/
-          fi
-
       - name: Prepare Artifacts
         run: |
           mkdir -p release_pro
-          mkdir -p release_lite
           cp PANDUAN_USER.txt release_pro/
-          cp PANDUAN_USER.txt release_lite/
           
           # Compress Pro Version
           if [ -d "dist/AutoYuPro.app" ]; then
             cp PANDUAN_USER.txt dist/AutoYuPro.app/Contents/Resources/
             cd dist && zip -r ../release_pro/AutoYuPro-${{ matrix.label }}.zip AutoYuPro.app && cd ..
-          fi
-          
-          # Compress Lite Version
-          if [ -d "dist/AutoYuLite.app" ]; then
-            cp PANDUAN_USER.txt dist/AutoYuLite.app/Contents/Resources/
-            cd dist && zip -r ../release_lite/AutoYuLite-${{ matrix.label }}.zip AutoYuLite.app && cd ..
           fi
 
       - name: Upload Pro Artifact
@@ -207,9 +166,3 @@ jobs:
         with:
           name: AutoYuPro-macOS-${{ matrix.label }}
           path: release_pro/*
-
-      - name: Upload Lite Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: AutoYuLite-macOS-${{ matrix.label }}
-          path: release_lite/*

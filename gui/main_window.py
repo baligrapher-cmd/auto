@@ -1251,6 +1251,7 @@ class MainWindow(QMainWindow):
         self.setMinimumSize(1150, 740)
         self.resize(1150, 740)
         self.setStyleSheet(FOTOYU_STYLESHEET)
+        self.is_smoke_test = os.environ.get("AUTOYU_SMOKE_TEST") == "1"
         self.is_login_only = False
         self.app_type = "pro"
         self.last_mode = "foto" # Untuk mengingat mode sebelumnya saat switch settings
@@ -1360,11 +1361,16 @@ class MainWindow(QMainWindow):
         
         self.main_outer_layout.addWidget(header_panel)
         
-        # Initial License Check
-        self.update_license_display()
-        
-        # Initial Update Check
-        QTimer.singleShot(2000, self.check_for_updates)
+        # Skip remote-dependent startup checks during smoke tests.
+        if self.is_smoke_test:
+            self.license_badge.setText("Smoke Test Mode")
+            self.license_badge.setStyleSheet("color: #94A3B8; font-size: 13px;")
+        else:
+            # Initial License Check
+            self.update_license_display()
+            
+            # Initial Update Check
+            QTimer.singleShot(2000, self.check_for_updates)
 
         # Update Notification Frame (Hidden by default)
         self.update_frame = QFrame()

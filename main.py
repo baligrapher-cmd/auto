@@ -2,10 +2,8 @@ import sys
 import os
 import ctypes
 from PySide6.QtWidgets import QApplication
+from PySide6.QtCore import QTimer
 from PySide6.QtGui import QIcon
-from gui.main_window import MainWindow
-from core.worker import AutomationWorker
-from core.playwright_runtime import configure_playwright_browser_path
  
 if sys.platform == "darwin":
     os.environ["QT_MAC_WANTS_LAYER"] = "1"
@@ -22,15 +20,41 @@ def get_resource_path(relative_path):
 def main():
     # Check for smoke test flag
     if "--smoke-test" in sys.argv:
+        os.environ["AUTOYU_SMOKE_TEST"] = "1"
         print("Running smoke test...")
-        # Test imports
-        import gui.main_window
-        import core.worker
-        import core.playwright_runtime
-        # Configure playwright
+        from gui.main_window import MainWindow
+        from core.playwright_runtime import configure_playwright_browser_path
+
         configure_playwright_browser_path()
-        print("✓ All imports successful")
+        print("✓ Core imports successful")
         print("✓ Playwright configured")
+
+        app = QApplication([arg for arg in sys.argv if arg != "--smoke-test"])
+
+        icon_path = get_resource_path("icon.ico")
+        if not os.path.exists(icon_path):
+            icon_path = get_resource_path("assets/icon.ico")
+        if os.path.exists(icon_path):
+            app_icon = QIcon(icon_path)
+            app.setWindowIcon(app_icon)
+
+        window = MainWindow()
+        if os.path.exists(icon_path):
+            window.setWindowIcon(QIcon(icon_path))
+        window.show()
+        app.processEvents()
+        print("✓ Main window opened")
+
+        # Keep the event loop alive briefly to verify that the UI can start.
+        QTimer.singleShot(500, app.quit)
+        exit_code = app.exec()
+        window.close()
+        app.processEvents()
+
+        if exit_code != 0:
+            print(f"Smoke test failed with exit code {exit_code}")
+            sys.exit(exit_code)
+
         print("Smoke test passed!")
         sys.exit(0)
         
@@ -44,6 +68,9 @@ def main():
         pass
 
     # Cari bundle browser Playwright dari lokasi internal atau folder di samping executable.
+    from gui.main_window import MainWindow
+    from core.worker import AutomationWorker
+    from core.playwright_runtime import configure_playwright_browser_path
     configure_playwright_browser_path()
 
     app = QApplication(sys.argv)
