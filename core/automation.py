@@ -232,6 +232,11 @@ class TabAutomation:
         self.duplicate_count = 0
         self.active_count = 0
 
+        # Optimized Write Batching
+        self._pending_tracker_updates = {}
+        self._last_tracker_save = 0.0
+        self._tracker_save_interval = 5.0  # Save at most every 5 seconds
+
         # Network Intercept for JSON Response
         self.last_api_response = None
         self.api_responses = [] # Daftar untuk menampung semua respon dalam satu batch
@@ -437,18 +442,19 @@ class TabAutomation:
             return os.path.basename(filepath)
 
     def _mark_file(self, filepath, status):
-        """Tandai satu file dalam tracker"""
+        """Tandai satu file dalam tracker (with batching)"""
         file_id = self._get_file_id(filepath)
         self.upload_tracking[file_id] = {
             'status': status,
             'timestamp': time.time(),
             'tab_id': self.tab_id,
-            'filename': os.path.basename(filepath) # Simpan nama asli untuk tampilan
+            'filename': os.path.basename(filepath)
         }
-        self._save_tracker()
+        self._pending_tracker_updates[file_id] = True
+        self._flush_tracker_if_needed()
 
     def _mark_batch(self, files, status):
-        """Tandai sekelompok file dalam tracker"""
+        """Tandai sekelompok file dalam tracker (with batching)"""
         if not files:
             return
         now = time.time()
@@ -460,7 +466,23 @@ class TabAutomation:
                 'tab_id': self.tab_id,
                 'filename': os.path.basename(f)
             }
-        self._save_tracker()
+            self._pending_tracker_updates[file_id] = True
+        self._flush_tracker_if_needed()
+
+    def _flush_tracker_if_needed(self):
+        """Flush tracker ke disk jika interval sudah lewat atau force"""
+        now = time.time()
+        if (now - self._last_tracker_save) >= self._tracker_save_interval:
+            self._save_tracker()
+            self._pending_tracker_updates.clear()
+            self._last_tracker_save = now
+
+    def _flush_tracker(self):
+        """Force flush semua pending update ke disk"""
+        if self._pending_tracker_updates:
+            self._save_tracker()
+            self._pending_tracker_updates.clear()
+            self._last_tracker_save = time.time()
 
     def _ensure_pending(self, files):
         if not files:
@@ -1248,6 +1270,7 @@ class TabAutomation:
                 
                 if start >= len(self.all_files):
                     self.state = AutoState.DONE
+                    self._flush_tracker()
                     return False # Stop running
                 
                 self.current_batch_files = self.all_files[start:end]
