@@ -2,6 +2,7 @@
 
 
 import os
+os.environ['MACOSX_DEPLOYMENT_TARGET'] = '11.0'
 
 a = Analysis(
     ['main.py'],

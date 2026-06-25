@@ -67,18 +67,17 @@ jobs:
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
       ARCH: ${{ matrix.arch_env }}
+      MACOSX_DEPLOYMENT_TARGET: '11.0'
     strategy:
       fail-fast: false
       matrix:
         include:
-          # Intel Mac Build (native x64 runner)
-          - os: macos-15-intel
+          - os: macos-13
             arch_env: x86_64
             python_arch: x64
             label: Intel
 
-          # Apple Silicon Build (native arm64 runner)
-          - os: macos-15
+          - os: macos-14
             arch_env: arm64
             python_arch: arm64
             label: AppleSilicon
@@ -90,7 +89,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12.10'
+          python-version: '3.10'
           architecture: ${{ matrix.python_arch }}
           cache: 'pip'
 
@@ -108,7 +107,7 @@ jobs:
           # cryptography extension against an incompatible OpenSSL runtime.
           python -m pip uninstall -y cryptography
           python -m pip install --only-binary cryptography --no-cache-dir cryptography
-          python -m pip install pyinstaller pillow playwright
+          python -m pip install pyinstaller
 
       - name: Inspect Cryptography Linkage
         run: |
@@ -135,7 +134,7 @@ jobs:
 
       - name: Install Playwright Browsers
         run: |
-          PLAYWRIGHT_BROWSERS_PATH=./pw-browsers python -m playwright install chromium
+          PLAYWRIGHT_BROWSERS_PATH=./pw-browsers python -m playwright install chromium chromium-headless-shell ffmpeg
 
       - name: Build Main Version (AutoYu Pro)
         run: |

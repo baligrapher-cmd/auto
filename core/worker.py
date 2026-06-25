@@ -1075,10 +1075,32 @@ class AutomationWorker(QThread):
                     
                     self.progress_signal.emit(total_uploaded, total_failed, total_duplicate, total_active, total_files)
                     
-                    # Tambah tab baru hanya setelah tab sebelumnya selesai kompresi (preview siap)
+                    # Tambah tab baru hanya setelah tab sebelumnya selesai kompres (agar tidak kompres barengan).
                     if self._is_running and current_tabs < num_tabs:
                         prev_tab = tabs[current_tabs - 1]
-                        if prev_tab.compression_done:
+                        # Check: 1) compression_done (preview siap) OR
+                        #        2) first_compression_done (pernah selesai kompres) OR
+                        #        3) state past WAIT_PREVIEW
+                        past_wait_preview = prev_tab.state in [
+                            AutoState.WAIT_METADATA_CONTAINER,
+                            AutoState.FILL_METADATA,
+                            AutoState.VERIFY_FILLED,
+                            AutoState.FILL_LOCATION,
+                            AutoState.SUBMIT,
+                            AutoState.CONFIRM_SUCCESS,
+                            AutoState.NEXT_BATCH,
+                            AutoState.DONE
+                        ]
+                        # Log untuk debug
+                        self.log_signal.emit(
+                            f"DEBUG Tab{prev_tab.tab_id} | state={prev_tab.state}, "
+                            f"compression_done={prev_tab.compression_done}, "
+                            f"first_compression_done={prev_tab.first_compression_done}, "
+                            f"past_wait_preview={past_wait_preview}"
+                        )
+                        if (prev_tab.compression_done 
+                            or prev_tab.first_compression_done 
+                            or past_wait_preview):
                             # CEK KETAT: Apakah browser masih hidup sebelum mencoba buka tab baru
                             is_browser_alive = False
                             try:

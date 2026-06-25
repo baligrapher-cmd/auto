@@ -5,9 +5,77 @@ import time
 import shutil
 import ctypes
 import re
+import urllib.request
+import urllib.error
 from playwright.sync_api import Page
 from core.state_machine import AutoState, UploadMode, MODE_CONFIG
 from core.license import check_license
+
+#region debug-point tab-next-compress-setup
+_TRAE_DBG_URL = None
+_TRAE_DBG_SESSION = None
+_TRAE_DBG_ENV_TRIED = False
+
+def _trae_dbg__load_env_once():
+    global _TRAE_DBG_URL, _TRAE_DBG_SESSION, _TRAE_DBG_ENV_TRIED
+    if _TRAE_DBG_ENV_TRIED:
+        return
+    _TRAE_DBG_ENV_TRIED = True
+
+    _TRAE_DBG_URL = os.environ.get("DEBUG_SERVER_URL") or None
+    _TRAE_DBG_SESSION = os.environ.get("DEBUG_SESSION_ID") or None
+
+    candidates = []
+    try:
+        candidates.append(os.path.join(os.getcwd(), ".dbg", "tab-next-compress.env"))
+    except Exception:
+        pass
+    try:
+        here = os.path.dirname(os.path.abspath(__file__))
+        candidates.append(os.path.abspath(os.path.join(here, "..", ".dbg", "tab-next-compress.env")))
+    except Exception:
+        pass
+
+    for p in candidates:
+        try:
+            if not p or not os.path.exists(p):
+                continue
+            with open(p, "r", encoding="utf-8") as f:
+                for line in f.read().splitlines():
+                    if not line or "=" not in line:
+                        continue
+                    k, v = line.split("=", 1)
+                    k = (k or "").strip()
+                    v = (v or "").strip()
+                    if k == "DEBUG_SERVER_URL" and v:
+                        _TRAE_DBG_URL = v
+                    elif k == "DEBUG_SESSION_ID" and v:
+                        _TRAE_DBG_SESSION = v
+        except Exception:
+            continue
+
+def _trae_dbg(event, **fields):
+    _trae_dbg__load_env_once()
+    if not _TRAE_DBG_URL:
+        return
+    payload = {
+        "ts": time.time(),
+        "sessionId": _TRAE_DBG_SESSION or "tab-next-compress",
+        "event": str(event),
+        "fields": fields,
+    }
+    try:
+        data = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+        req = urllib.request.Request(
+            _TRAE_DBG_URL,
+            data=data,
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        urllib.request.urlopen(req, timeout=0.2).read()
+    except Exception:
+        return
+#endregion debug-point tab-next-compress-setup
 
 # ==========================================
 # CENTRALIZED SELECTORS (Production Standard)
@@ -176,6 +244,8 @@ class TabAutomation:
         self.is_lite = bool(config.get("is_lite") or config.get("lite_mode"))
         self.turbo_errors = 0
         self.compression_done = False
+        self.first_compression_done = False  # New flag: stays True after first compression completes
+        self.injection_done = False
         self.page_closed = False
         self.visual_success_detected = False # Flag untuk Hybrid Verification
         self.redirect_success_detected = False # Flag untuk deteksi redirect ke profil sebagai sukses
@@ -1141,6 +1211,23 @@ class TabAutomation:
         try:
             elapsed = time.time() - self.state_start_time if self.state_start_time else 0
 
+            #region debug-point tab-next-compress-state
+            try:
+                last_state = getattr(self, "_trae_dbg_last_state", None)
+                if last_state != self.state:
+                    self._trae_dbg_last_state = self.state
+                    _trae_dbg(
+                        "state_change",
+                        runId=os.environ.get("TRAE_DBG_RUN_ID") or "pre",
+                        tabId=self.tab_id,
+                        state=str(self.state),
+                        url=getattr(self.page, "url", None),
+                        injector=self.global_lock.get("injector") if isinstance(self.global_lock, dict) else None,
+                    )
+            except Exception:
+                pass
+            #endregion debug-point tab-next-compress-state
+
             # -------------------------------------------------
             # INIT / START
             # -------------------------------------------------
@@ -1168,6 +1255,7 @@ class TabAutomation:
                 self.submit_retries = 0
                 self.batch_finished = False
                 self.compression_done = False # Reset compression status for new batch
+                self.injection_done = False
                 self.visual_success_detected = False # Reset for new batch
                 self.redirect_success_detected = False # Reset for new batch
                 self._mark_batch(self.current_batch_files, 'pending')
@@ -1175,9 +1263,14 @@ class TabAutomation:
                 # 2. Navigation
                 if "/upload" not in self.page.url:
                     try:
-                        self.page.goto(SELECTORS["url_upload"], timeout=10000)
-                    except Exception as nav_err:
+                        now_nav = time.time()
+                        last_try = getattr(self, "_nav_last_try_at", 0.0)
+                        if now_nav - last_try >= 1.0:
+                            self._nav_last_try_at = now_nav
+                            self.page.goto(SELECTORS["url_upload"], wait_until="domcontentloaded", timeout=2500)
+                    except Exception:
                         pass
+                    return True
                 
                 if "/upload" in self.page.url:
                     # Check for upgrade modal ("Tingkatkan ke Kreator")
@@ -1218,10 +1311,38 @@ class TabAutomation:
                 # Cek apakah injector sedang kosong atau sedang dipegang tab ini
                 injector = self.global_lock.get('injector')
                 if injector is None or injector == self.tab_id:
+                    #region debug-point tab-next-compress-injector-acquire
+                    try:
+                        _trae_dbg(
+                            "injector_acquire",
+                            runId=os.environ.get("TRAE_DBG_RUN_ID") or "pre",
+                            tabId=self.tab_id,
+                            injectorBefore=injector,
+                            elapsed=elapsed,
+                        )
+                    except Exception:
+                        pass
+                    #endregion debug-point tab-next-compress-injector-acquire
                     self.global_lock['injector'] = self.tab_id
                     self.state = AutoState.SELECT_MODE
                     self.state_start_time = time.time()
                 else:
+                    #region debug-point tab-next-compress-injector-wait
+                    try:
+                        now_dbg = time.time()
+                        last_dbg = getattr(self, "_trae_dbg_last_wait_emit", 0.0)
+                        if now_dbg - last_dbg >= 1.0:
+                            self._trae_dbg_last_wait_emit = now_dbg
+                            _trae_dbg(
+                                "injector_wait",
+                                runId=os.environ.get("TRAE_DBG_RUN_ID") or "pre",
+                                tabId=self.tab_id,
+                                injectorHeldBy=injector,
+                                elapsed=elapsed,
+                            )
+                    except Exception:
+                        pass
+                    #endregion debug-point tab-next-compress-injector-wait
                     if int(elapsed) % 30 == 0:
                          self.log(f"⏳ Menunggu antrian...")
                     
@@ -1253,9 +1374,23 @@ class TabAutomation:
                                 file_chooser = fc_info.value
                                 # self.log(f"Memproses file...")
                                 file_chooser.set_files(self.current_batch_files)
+                                #region debug-point tab-next-compress-video-inject
+                                try:
+                                    _trae_dbg(
+                                        "files_injected",
+                                        runId=os.environ.get("TRAE_DBG_RUN_ID") or "pre",
+                                        tabId=self.tab_id,
+                                        branch="video-tab-file-chooser",
+                                        fileCount=len(self.current_batch_files or []),
+                                        injector=self.global_lock.get("injector") if isinstance(self.global_lock, dict) else None,
+                                    )
+                                except Exception:
+                                    pass
+                                #endregion debug-point tab-next-compress-video-inject
                                 
                                 # Jika kita sudah set_files di sini, kita bisa langsung ke state berikutnya
                                 # self.log(f"File siap. Memproses...")
+                                self.injection_done = True
                                 self.state = AutoState.WAIT_PREVIEW
                                 self.state_start_time = time.time()
                                 return True # Keluar dari SELECT_MODE step ini dan lanjut running
@@ -1272,6 +1407,7 @@ class TabAutomation:
                                         video_tab_alt.click(force=True)
                                     file_chooser = fc_info.value
                                     file_chooser.set_files(self.current_batch_files)
+                                    self.injection_done = True
                                     self.state = AutoState.WAIT_PREVIEW
                                     self.state_start_time = time.time()
                                     return True
@@ -1370,6 +1506,20 @@ class TabAutomation:
                                 
                             self.current_batch_files = valid_files
                             trigger.set_input_files(valid_files)
+                            self.injection_done = True
+                            #region debug-point tab-next-compress-inject-input
+                            try:
+                                _trae_dbg(
+                                    "files_injected",
+                                    runId=os.environ.get("TRAE_DBG_RUN_ID") or "pre",
+                                    tabId=self.tab_id,
+                                    branch="input-set-files",
+                                    fileCount=len(valid_files or []),
+                                    injector=self.global_lock.get("injector") if isinstance(self.global_lock, dict) else None,
+                                )
+                            except Exception:
+                                pass
+                            #endregion debug-point tab-next-compress-inject-input
                         else:
                             # Gunakan expect_file_chooser untuk menangani dialog upload file
                             with self.page.expect_file_chooser(timeout=10000) as fc_info:
@@ -1395,8 +1545,33 @@ class TabAutomation:
                                         self.failed_count += 1
                                 self.current_batch_files = valid_files
                             file_chooser.set_files(valid_files)
+                            self.injection_done = True
+                            #region debug-point tab-next-compress-inject-chooser
+                            try:
+                                _trae_dbg(
+                                    "files_injected",
+                                    runId=os.environ.get("TRAE_DBG_RUN_ID") or "pre",
+                                    tabId=self.tab_id,
+                                    branch="file-chooser-set-files",
+                                    fileCount=len(valid_files or []),
+                                    injector=self.global_lock.get("injector") if isinstance(self.global_lock, dict) else None,
+                                )
+                            except Exception:
+                                pass
+                            #endregion debug-point tab-next-compress-inject-chooser
                         
                         # self.log(f"Terkirim, sedang diproses...")
+                        #region debug-point tab-next-compress-injector-release
+                        try:
+                            _trae_dbg(
+                                "injector_after_select_mode",
+                                runId=os.environ.get("TRAE_DBG_RUN_ID") or "pre",
+                                tabId=self.tab_id,
+                                injector=self.global_lock.get("injector") if isinstance(self.global_lock, dict) else None,
+                            )
+                        except Exception:
+                            pass
+                        #endregion debug-point tab-next-compress-injector-release
                         self.state = AutoState.WAIT_PREVIEW
                         self.state_start_time = time.time()
                     except Exception as ex:
@@ -1460,6 +1635,7 @@ class TabAutomation:
                     if self.global_lock.get('injector') == self.tab_id:
                         self.global_lock['injector'] = None
                     self.compression_done = True
+                    self.first_compression_done = True  # First compression is done, never reset this!
                     if price_input_visible or edit_url:
                         self.state = AutoState.FILL_METADATA
                     else:

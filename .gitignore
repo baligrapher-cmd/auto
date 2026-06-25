@@ -73,3 +73,11 @@ dist/
 *.spec
 !AutoYuPro.spec
 !AutoYuLite.spec
+
+# IDE / OS junk
+.dbg/
+*.swp
+*.swo
+*.DS_Store
+.DS_Store
+._*
