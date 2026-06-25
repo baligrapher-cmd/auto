@@ -81,3 +81,5 @@ dist/
 *.DS_Store
 .DS_Store
 ._*
+test_playwright.py
+test_playwright2.py

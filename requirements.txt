@@ -1,7 +1,9 @@
-PySide6==6.5.3
-playwright>=1.41
+PySide6==6.8.3
+playwright==1.58.0
 watchdog>=3.0
 requests
 cryptography
 pillow
 psutil
+greenlet>=3.0
+pyee>=11.0
