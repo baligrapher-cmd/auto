@@ -103,14 +103,12 @@ jobs:
         run: |
           source $CONDA/etc/profile.d/conda.sh
           conda activate autoyu
-          python -m pip install --upgrade pip
-          python -m pip install --upgrade setuptools wheel
+          # Install native libs via conda (no build from source!)
+          conda install -y "cryptography>=38" "pillow>=10" "psutil>=5" "requests>=2" "watchdog>=3"
+          # Install remaining via pip
+          python -m pip install --upgrade pip setuptools wheel
           python -m pip install -r requirements.txt
-          # Force the official wheel on macOS to avoid bundling a locally-built
-          # cryptography extension against an incompatible OpenSSL runtime.
-          python -m pip uninstall -y cryptography
-          python -m pip install --only-binary cryptography --no-cache-dir cryptography
-          python -m pip install pyinstaller
+          python -m pip install pyinstaller playwright
 
       - name: Inspect Cryptography Linkage (Intel)
         run: |
@@ -227,14 +225,12 @@ jobs:
         run: |
           source $CONDA/etc/profile.d/conda.sh
           conda activate autoyu
-          python -m pip install --upgrade pip
-          python -m pip install --upgrade setuptools wheel
+          # Install native libs via conda (no build from source!)
+          conda install -y "cryptography>=38" "pillow>=10" "psutil>=5" "requests>=2" "watchdog>=3"
+          # Install remaining via pip
+          python -m pip install --upgrade pip setuptools wheel
           python -m pip install -r requirements.txt
-          # Force the official wheel on macOS to avoid bundling a locally-built
-          # cryptography extension against an incompatible OpenSSL runtime.
-          python -m pip uninstall -y cryptography
-          python -m pip install --only-binary cryptography --no-cache-dir cryptography
-          python -m pip install pyinstaller
+          python -m pip install pyinstaller playwright
 
       - name: Inspect Cryptography Linkage (Apple Silicon)
         run: |
