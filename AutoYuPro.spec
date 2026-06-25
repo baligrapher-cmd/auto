@@ -2,14 +2,18 @@
 
 
 import os
+from PyInstaller.utils.hooks import collect_data_files
 os.environ['MACOSX_DEPLOYMENT_TARGET'] = '11.0'
+
+# Collect Playwright's data files (driver, etc.)
+playwright_datas = collect_data_files('playwright')
 
 a = Analysis(
     ['main.py'],
     pathex=[],
     binaries=[],
-    datas=[('PANDUAN_USER.txt', '.'), ('icon.ico', '.')],
-    hiddenimports=['encodings', 'encodings.utf_8', 'encodings.latin_1'],
+    datas=[('PANDUAN_USER.txt', '.'), ('icon.ico', '.')] + playwright_datas,
+    hiddenimports=['encodings', 'encodings.utf_8', 'encodings.latin_1', 'playwright'],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
