@@ -1909,8 +1909,8 @@ class MainWindow(QMainWindow):
         self.chk_headless.setChecked(False)
         self.chk_headless.setFocusPolicy(Qt.NoFocus)
         
-        headless_helper = QLabel("⚠️ Catatan: Mode Headless bisa membuat upload lebih cepat, tapi resiko terdeteksi bot lebih tinggi!")
-        headless_helper.setStyleSheet("color: #F59E0B; font-size: 11px; font-style: italic;")
+        headless_helper = QLabel("💡 Manfaat: Hemat RAM (30-50%), hemat CPU, hemat baterai (laptop) | ⚠️ Catatan: Tidak bisa melihat browser secara langsung, resiko terdeteksi bot lebih tinggi!")
+        headless_helper.setStyleSheet("color: #60A5FA; font-size: 11px; font-style: italic;")
         headless_helper.setWordWrap(True)
         
         headless_row = QVBoxLayout()
