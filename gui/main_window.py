@@ -1897,12 +1897,28 @@ class MainWindow(QMainWindow):
             }
             QLabel::success {
                 background-color: rgba(16, 185, 129, 0.1);
-                border: 1px solid #10B981;
             }
         """)
         self.dynamic_helper.setWordWrap(True)
-        self.dynamic_helper.setVisible(False)
         opt_v_layout.addWidget(self.dynamic_helper)
+        
+        # Row 5: Headless Mode Toggle
+        self.chk_headless = QCheckBox("🖥️ Mode Headless (Tanpa Tampilan Browser)")
+        self.chk_headless.setProperty("class", "pill_pro")
+        self.chk_headless.setToolTip("Jalankan browser tanpa tampilan, hemat RAM/CPU tapi tidak bisa melihat proses secara langsung")
+        self.chk_headless.setChecked(False)
+        self.chk_headless.setFocusPolicy(Qt.NoFocus)
+        
+        headless_helper = QLabel("⚠️ Catatan: Mode Headless bisa membuat upload lebih cepat, tapi resiko terdeteksi bot lebih tinggi!")
+        headless_helper.setStyleSheet("color: #F59E0B; font-size: 11px; font-style: italic;")
+        headless_helper.setWordWrap(True)
+        
+        headless_row = QVBoxLayout()
+        headless_row.setSpacing(8)
+        headless_row.addWidget(self.chk_headless)
+        headless_row.addWidget(headless_helper)
+        
+        opt_v_layout.addLayout(headless_row)
 
         grid.addWidget(self.opt_card, 7, 0, 1, 2)
 
@@ -2217,6 +2233,10 @@ class MainWindow(QMainWindow):
                 self.chk_super_simple.setChecked(settings["super_simple_mode"])
                 self.toggle_super_simple_mode(settings["super_simple_mode"])
                 self.chk_super_simple.blockSignals(False)
+            
+            # Load Headless Mode preference
+            if "headless" in settings:
+                self.chk_headless.setChecked(settings["headless"])
             
             # Mode dikunci SAFE (utama + lite)
             self.radio_safe.setChecked(True)
@@ -3550,7 +3570,8 @@ class MainWindow(QMainWindow):
             "auto_retry": self.chk_auto_retry.isChecked(),
             "current_account": self.account_combo.currentText(),
             "sd_card_mode": sd_card_mode,
-            "recursive_scan": recursive_scan
+            "recursive_scan": recursive_scan,
+            "headless": self.chk_headless.isChecked()
         }
         return config
 

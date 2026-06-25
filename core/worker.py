@@ -257,45 +257,32 @@ class AutomationWorker(QThread):
                 print("[Worker] Playwright started. Launching browser...")
                 
                 # Launch Persistent Context
+                is_headless = self.config.get("headless", False)
+                if is_headless:
+                    self.log_signal.emit("🖥️ Mode Headless aktif! Browser berjalan tanpa tampilan.")
+                
                 launch_args = {
                     "user_data_dir": user_data_dir,
-                    "headless": False,
+                    "headless": is_headless,
                     "args": [
-                        # Sandbox & Security
                         "--no-sandbox",
                         "--disable-setuid-sandbox",
-                        # Performance Optimizations
                         "--disable-dev-shm-usage",
                         "--disable-gpu",
                         "--no-first-run",
-                        "--disable-features=RendererCodeIntegrity,TranslateUI,InterestFeedContentSuggestions,VizDisplayCompositor",
+                        "--disable-features=RendererCodeIntegrity",
                         "--disable-software-rasterizer",
                         "--disable-gpu-sandbox",
                         "--disable-accelerated-2d-canvas",
                         "--disable-sync",
-                        "--disable-background-networking",
-                        "--disable-background-timer-throttling",
-                        "--disable-backgrounding-occluded-windows",
-                        "--disable-renderer-backgrounding",
-                        "--disable-metrics",
-                        "--disable-default-apps",
-                        "--disable-hang-monitor",
-                        "--disable-prompt-on-repost",
-                        "--disable-domain-reliability",
-                        "--enable-features=NetworkService,NetworkServiceInProcess",
-                        "--disable-infobars",
-                        "--disable-notifications",
-                        "--disable-popup-blocking",
-                        "--disable-web-security",
-                        # Window
-                        "--window-size=1280,720",
-                        "--start-maximized"
+                        "--window-size=1280,720", # Paksa ukuran desktop
+                        "--start-maximized" # Start maximized untuk tampilan desktop penuh
                     ],
-                    "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                    "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36", # Paksa Desktop User Agent
                     "no_viewport": True,
                     "permissions": ["geolocation"],
-                    "geolocation": {"latitude": -8.65, "longitude": 115.216667},
-                    "timeout": 120000
+                    "geolocation": {"latitude": -8.65, "longitude": 115.216667}, # Default Bali
+                    "timeout": 120000 
                 }
                 print(f"[Worker] Launch args: {launch_args}")
 
