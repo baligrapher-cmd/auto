@@ -12,12 +12,13 @@ from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
                                 QRadioButton, QTextEdit, QSpinBox, QFileDialog, QGroupBox, QMessageBox, QFrame, QGridLayout, QDialog, QCheckBox, QScrollArea, QLayout, QProgressBar, QStyle, QComboBox, QInputDialog, QCompleter)
 from core.license import get_hwid, install_license, install_license_text, check_license, activate_license
 from core.state_machine import UploadMode
+from core.preset import load_presets, save_presets, add_preset, delete_preset
 from core.updater import UpdateChecker, open_download_page
 from PySide6.QtCore import Qt, Signal, Slot, QDateTime, QUrl, QTimer, QEvent, QProcess, QThread
 from PySide6.QtGui import QIcon, QClipboard, QFont, QDesktopServices, QTextCursor
 from PySide6.QtMultimedia import QSoundEffect
 
-AUTO_YU_VERSION = "3.0.5"
+AUTO_YU_VERSION = "3.0.6"
 UPDATE_CHECK_URL = "https://pramana.web.id/autoyu/download/update.json"
 
 def is_admin():
@@ -1600,6 +1601,66 @@ class MainWindow(QMainWindow):
         setup_meta_row.addWidget(self.setup_metadata_status, 1)
         add_form_row("🧩 Setup Metadata", setup_meta_row, 2)
 
+        # Preset Metadata
+        preset_row = QHBoxLayout()
+        preset_row.setSpacing(8)
+        
+        self.preset_combo = QComboBox()
+        self.preset_combo.setPlaceholderText("Pilih Preset...")
+        self.preset_combo.setMinimumWidth(180)
+        self.preset_combo.setStyleSheet("""
+            QComboBox {
+                color: #E2E8F0;
+                background-color: #1E293B;
+                border: 1px solid #334155;
+                border-radius: 6px;
+                padding: 6px 10px;
+                font-size: 13px;
+            }
+            QComboBox:hover {
+                border: 1px solid #4F46E5;
+            }
+            QComboBox::drop-down {
+                border: none;
+                width: 30px;
+            }
+            QComboBox::down-arrow {
+                image: none;
+                border-left: 6px solid transparent;
+                border-right: 6px solid transparent;
+                border-top: 6px solid #94A3B8;
+            }
+            QComboBox QAbstractItemView {
+                background-color: #1E293B;
+                border: 1px solid #334155;
+                color: #E2E8F0;
+                selection-background-color: #4F46E5;
+                selection-color: white;
+                padding: 4px;
+            }
+        """)
+        
+        self.btn_save_preset = QPushButton("💾 Simpan Preset")
+        self.btn_save_preset.setProperty("class", "secondary_pro")
+        self.btn_save_preset.setFixedHeight(35)
+        self.btn_save_preset.clicked.connect(self.save_current_as_preset)
+        
+        self.btn_delete_preset = QPushButton("🗑️")
+        self.btn_delete_preset.setFixedSize(35, 35)
+        self.btn_delete_preset.setProperty("class", "secondary_pro")
+        self.btn_delete_preset.setToolTip("Hapus Preset yang dipilih")
+        self.btn_delete_preset.clicked.connect(self.delete_current_preset)
+        
+        preset_row.addWidget(self.preset_combo, 1)
+        preset_row.addWidget(self.btn_save_preset)
+        preset_row.addWidget(self.btn_delete_preset)
+        
+        add_form_row("📋 Preset Metadata", preset_row, 3)
+        
+        # Load preset ke combo
+        self._load_presets_to_combo()
+        self.preset_combo.currentIndexChanged.connect(self._apply_selected_preset)
+
         # Price & FotoTree (Realtime)
         price_tree_row = QHBoxLayout()
         price_tree_row.setSpacing(15)
@@ -1645,7 +1706,7 @@ class MainWindow(QMainWindow):
         price_tree_row.addSpacing(20)
         price_tree_row.addWidget(self.fototree_display_lbl, 1)
         
-        add_form_row("💰 Harga & FotoTree", price_tree_row, 3)
+        add_form_row("💰 Harga & FotoTree", price_tree_row, 4)
 
         # Location (Realtime Upload)
         location_row = QHBoxLayout()
@@ -1685,7 +1746,7 @@ class MainWindow(QMainWindow):
         location_row.addWidget(self.desc_display_lbl)
         location_row.addWidget(self.desc_input, 2)
 
-        add_form_row("🗺️ Metadata & Deskripsi", location_row, 4)
+        add_form_row("🗺️ Metadata & Deskripsi", location_row, 5)
 
         # 6. ENGINE OPTIMIZATION (Consolidated & Clean)
         opt_card = QFrame()
@@ -1790,7 +1851,7 @@ class MainWindow(QMainWindow):
         self.dynamic_helper.setVisible(False)
         opt_v_layout.addWidget(self.dynamic_helper)
 
-        grid.addWidget(opt_card, 6, 0, 1, 2)
+        grid.addWidget(opt_card, 7, 0, 1, 2)
 
         config_layout.addLayout(grid)
         self.content_layout.addWidget(config_card)
@@ -4181,6 +4242,86 @@ class MainWindow(QMainWindow):
                 self.log_message("👉 Silakan login manual di browser, lalu klik <b>'LANJUTKAN'</b>.")
         else:
             self.login_confirm_btn.setVisible(False)
+
+    # ==========================================
+    # PRESET METADATA FUNCTIONS
+    # ==========================================
+    def _load_presets_to_combo(self):
+        self.preset_combo.blockSignals(True)
+        self.preset_combo.clear()
+        self.preset_combo.addItem("Pilih Preset...", None)
+        
+        presets = load_presets()
+        for preset in presets:
+            self.preset_combo.addItem(preset["name"], preset)
+        
+        self.preset_combo.blockSignals(False)
+
+    def _apply_selected_preset(self, index):
+        preset = self.preset_combo.itemData(index)
+        if not preset:
+            return
+        
+        # Terapkan preset ke form
+        if preset.get("price"):
+            self.price_input.setText(preset["price"])
+        if preset.get("description"):
+            self.desc_input.setText(preset["description"])
+        if preset.get("location") and hasattr(self, "location_display_lbl"):
+            # Update display location
+            self.location_display_lbl.setText(f"Lokasi: {preset['location']}")
+        if preset.get("fototree"):
+            self._set_fototree_value(preset["fototree"], locked=False, persist=False)
+        
+        self.log_message(f"✅ Preset '{preset['name']}' diterapkan!")
+
+    def save_current_as_preset(self):
+        preset_name, ok = QInputDialog.getText(self, "Simpan Preset", "Masukkan nama preset:")
+        if not ok or not preset_name.strip():
+            return
+        
+        # Ambil nilai dari form saat ini
+        price = self.price_input.text().strip()
+        description = self.desc_input.toPlainText().strip()
+        
+        # Coba ambil lokasi dari display label
+        location = None
+        if hasattr(self, "location_display_lbl"):
+            loc_text = self.location_display_lbl.text().replace("Lokasi:", "").strip()
+            if loc_text and not loc_text.startswith("("):
+                location = loc_text
+        
+        # Coba ambil fototree dari display label
+        fototree = None
+        if hasattr(self, "fototree_display_lbl"):
+            tree_text = self.fototree_display_lbl.text().replace("FotoTree:", "").replace("(Otomatis dari Setup)", "").strip()
+            if tree_text:
+                fototree = tree_text
+        
+        # Simpan preset
+        add_preset(preset_name.strip(), price, description, location, fototree)
+        self._load_presets_to_combo()
+        
+        self.log_message(f"✅ Preset '{preset_name.strip()}' berhasil disimpan!")
+        QMessageBox.information(self, "Berhasil", f"Preset '{preset_name.strip()}' berhasil disimpan!")
+
+    def delete_current_preset(self):
+        preset = self.preset_combo.itemData(self.preset_combo.currentIndex())
+        if not preset:
+            QMessageBox.warning(self, "Peringatan", "Pilih preset yang ingin dihapus terlebih dahulu.")
+            return
+        
+        reply = QMessageBox.question(
+            self, 
+            "Konfirmasi Hapus", 
+            f"Yakin ingin menghapus preset '{preset['name']}'?",
+            QMessageBox.Yes | QMessageBox.No
+        )
+        
+        if reply == QMessageBox.Yes:
+            delete_preset(preset["id"])
+            self._load_presets_to_combo()
+            self.log_message(f"🗑️ Preset '{preset['name']}' dihapus!")
 
     def reset_ui(self):
         self.start_btn.setEnabled(True)
