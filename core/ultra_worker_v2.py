@@ -93,9 +93,9 @@ class UltraWorkerV2(QThread):
             try:
                 if hasattr(file_tuple[1], "seek"): file_tuple[1].seek(0)
                 files = {"file": file_tuple}
-                print(f"DEBUG: POST to {url} with headers {list(headers.keys())}")
+                # print(f"DEBUG: POST to {url} with headers {list(headers.keys())}")
                 resp = session.post(url, headers=headers, data=data, files=files, timeout=(15, 120))
-                print(f"DEBUG: Status {resp.status_code}")
+                # print(f"DEBUG: Status {resp.status_code}")
                 return resp, None
             except Exception as e:
                 last_exc = e
