@@ -68,6 +68,7 @@ jobs:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
       ARCH: ${{ matrix.arch_env }}
       MACOSX_DEPLOYMENT_TARGET: '11.0'
+      PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/pw-browsers
     strategy:
       fail-fast: false
       matrix:
@@ -97,6 +98,15 @@ jobs:
         run: |
           python -VV
           python -c "import platform, sys; print(platform.platform()); print(platform.machine()); print(sys.executable)"
+
+      - name: Cache Playwright Browsers
+        uses: actions/cache@v4
+        id: cache-playwright
+        with:
+          path: ${{ env.PLAYWRIGHT_BROWSERS_PATH }}
+          key: ${{ matrix.os }}-playwright-${{ hashFiles('requirements.txt') }}
+          restore-keys: |
+            ${{ matrix.os }}-playwright-
 
       - name: Install Dependencies
         run: |
@@ -133,8 +143,9 @@ jobs:
           cp icon.icns assets/icon.icns || cp icon.icns icon.icns
 
       - name: Install Playwright Browsers
+        if: steps.cache-playwright.outputs.cache-hit != 'true'
         run: |
-          PLAYWRIGHT_BROWSERS_PATH=./pw-browsers python -m playwright install chromium chromium-headless-shell ffmpeg
+          python -m playwright install chromium chromium-headless-shell ffmpeg
 
       - name: Build Main Version (AutoYu Pro)
         run: |
