@@ -4,6 +4,12 @@ on:
   push:
     branches: [ main, master ]
   workflow_dispatch:
+    inputs:
+      force_build:
+        description: "Force rebuild all artifacts"
+        required: false
+        default: "false"
+        type: boolean
 
 jobs:
   # --- WINDOWS BUILD ---
@@ -66,20 +72,19 @@ jobs:
     runs-on: ${{ matrix.os }}
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-      ARCH: ${{ matrix.arch_env }}
       MACOSX_DEPLOYMENT_TARGET: '11.0'
       PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/pw-browsers
     strategy:
       fail-fast: false
       matrix:
         include:
-          - os: macos-14
-            arch_env: x86_64
+          - os: macos-13
+            python_version: '3.11'
             python_arch: x64
             label: Intel
 
           - os: macos-14
-            arch_env: arm64
+            python_version: '3.11'
             python_arch: arm64
             label: AppleSilicon
 
@@ -90,45 +95,45 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
+          python-version: ${{ matrix.python_version }}
           architecture: ${{ matrix.python_arch }}
           cache: 'pip'
 
       - name: Show Python Runtime
         run: |
-          arch -${{ matrix.arch_env }} python -VV
-          arch -${{ matrix.arch_env }} python -c "import platform, sys; print(platform.platform()); print(platform.machine()); print(sys.executable)"
+          python -VV
+          python -c "import platform, sys; print(platform.platform()); print(platform.machine()); print(sys.executable)"
 
       - name: Cache Playwright Browsers
         uses: actions/cache@v4
         id: cache-playwright
         with:
           path: ${{ env.PLAYWRIGHT_BROWSERS_PATH }}
-          key: ${{ matrix.os }}-${{ matrix.arch_env }}-playwright-${{ hashFiles('requirements.txt') }}
+          key: ${{ matrix.os }}-${{ matrix.python_arch }}-playwright-${{ hashFiles('requirements.txt') }}
           restore-keys: |
-            ${{ matrix.os }}-${{ matrix.arch_env }}-playwright-
+            ${{ matrix.os }}-${{ matrix.python_arch }}-playwright-
             ${{ matrix.os }}-playwright-
 
       - name: Install Dependencies
         run: |
-          arch -${{ matrix.arch_env }} python -m pip install --upgrade pip
-          arch -${{ matrix.arch_env }} python -m pip install --upgrade setuptools wheel
-          arch -${{ matrix.arch_env }} python -m pip install -r requirements.txt
+          python -m pip install --upgrade pip
+          python -m pip install --upgrade setuptools wheel
+          python -m pip install -r requirements.txt
           # Force the official wheel on macOS to avoid bundling a locally-built
           # cryptography extension against an incompatible OpenSSL runtime.
-          arch -${{ matrix.arch_env }} python -m pip uninstall -y cryptography
-          arch -${{ matrix.arch_env }} python -m pip install --only-binary cryptography --no-cache-dir cryptography
-          arch -${{ matrix.arch_env }} python -m pip install pyinstaller
+          python -m pip uninstall -y cryptography
+          python -m pip install --only-binary cryptography --no-cache-dir cryptography
+          python -m pip install pyinstaller
 
       - name: Inspect Cryptography Linkage
         run: |
-          CRYPTO_SO=$(arch -${{ matrix.arch_env }} python -c "import cryptography.hazmat.bindings._rust as m; print(m.__file__)")
+          CRYPTO_SO=$(python -c "import cryptography.hazmat.bindings._rust as m; print(m.__file__)")
           echo "cryptography binding: $CRYPTO_SO"
           otool -L "$CRYPTO_SO" || true
 
       - name: Create macOS Icon
         run: |
-          arch -${{ matrix.arch_env }} python -c "from PIL import Image; img = Image.open('icon.ico'); img.save('icon.png')"
+          python -c "from PIL import Image; img = Image.open('icon.ico'); img.save('icon.png')"
           mkdir -p icon.iconset
           sips -z 16 16     icon.png --out icon.iconset/icon_16x16.png
           sips -z 32 32     icon.png --out icon.iconset/icon_16x16@2x.png
@@ -146,11 +151,11 @@ jobs:
       - name: Install Playwright Browsers
         if: steps.cache-playwright.outputs.cache-hit != 'true'
         run: |
-          arch -${{ matrix.arch_env }} python -m playwright install chromium chromium-headless-shell ffmpeg
+          python -m playwright install chromium chromium-headless-shell ffmpeg
 
       - name: Build Main Version (AutoYu Pro)
         run: |
-          arch -${{ matrix.arch_env }} python -m PyInstaller --clean --noconfirm AutoYuPro.spec
+          python -m PyInstaller --clean --noconfirm AutoYuPro.spec
           # Copy only the browser runtimes we actually need, then remove bulky extras.
           if [ -d "pw-browsers" ]; then
             mkdir -p dist/AutoYuPro.app/Contents/Resources/browsers
@@ -165,7 +170,7 @@ jobs:
 
       - name: Smoke Test (macOS Pro)
         run: |
-          arch -${{ matrix.arch_env }} ./dist/AutoYuPro.app/Contents/MacOS/AutoYuPro --smoke-test
+          ./dist/AutoYuPro.app/Contents/MacOS/AutoYuPro --smoke-test
 
       - name: Prepare Artifacts
         run: |
