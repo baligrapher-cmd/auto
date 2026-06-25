@@ -1091,13 +1091,13 @@ class AutomationWorker(QThread):
                             AutoState.NEXT_BATCH,
                             AutoState.DONE
                         ]
-                        # Log untuk debug
-                        self.log_signal.emit(
-                            f"DEBUG Tab{prev_tab.tab_id} | state={prev_tab.state}, "
-                            f"compression_done={prev_tab.compression_done}, "
-                            f"first_compression_done={prev_tab.first_compression_done}, "
-                            f"past_wait_preview={past_wait_preview}"
-                        )
+                        # Log untuk debug (dinonaktifkan)
+                        # self.log_signal.emit(
+                        #     f"DEBUG Tab{prev_tab.tab_id} | state={prev_tab.state}, "
+                        #     f"compression_done={prev_tab.compression_done}, "
+                        #     f"first_compression_done={prev_tab.first_compression_done}, "
+                        #     f"past_wait_preview={past_wait_preview}"
+                        # )
                         if (prev_tab.compression_done 
                             or prev_tab.first_compression_done 
                             or past_wait_preview):
