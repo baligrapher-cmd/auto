@@ -78,7 +78,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: macos-13
+          - os: macos-latest-large
             python_version: '3.11'
             python_arch: x64
             label: Intel
