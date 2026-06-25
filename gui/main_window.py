@@ -9,11 +9,12 @@ import math
 import requests
 from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, 
                                 QHBoxLayout, QLabel, QLineEdit, QPushButton, 
-                                QRadioButton, QTextEdit, QSpinBox, QFileDialog, QGroupBox, QMessageBox, QFrame, QGridLayout, QDialog, QCheckBox, QScrollArea, QLayout, QProgressBar, QStyle, QComboBox, QInputDialog, QCompleter)
+                                QRadioButton, QTextEdit, QSpinBox, QFileDialog, QGroupBox, QMessageBox, QFrame, QGridLayout, QDialog, QCheckBox, QScrollArea, QLayout, QProgressBar, QStyle, QComboBox, QInputDialog, QCompleter, QTableWidget, QTableWidgetItem, QHeaderView, QAbstractItemView)
 from core.license import get_hwid, install_license, install_license_text, check_license, activate_license
 from core.state_machine import UploadMode
 from core.preset import load_presets, save_presets, add_preset, delete_preset
 from core.updater import UpdateChecker, open_download_page
+from core.event_history import EventHistory
 from PySide6.QtCore import Qt, Signal, Slot, QDateTime, QUrl, QTimer, QEvent, QProcess, QThread
 from PySide6.QtGui import QIcon, QClipboard, QFont, QDesktopServices, QTextCursor
 from PySide6.QtMultimedia import QSoundEffect
@@ -1312,6 +1313,36 @@ class MainWindow(QMainWindow):
         """)
         self.license_icon.clicked.connect(self.show_license_info)
         
+        # Toggle Mode Simple
+        self.chk_super_simple = QCheckBox("✨ Mode Simple")
+        self.chk_super_simple.setCursor(Qt.PointingHandCursor)
+        self.chk_super_simple.setStyleSheet("""
+            QCheckBox {
+                color: #22C55E;
+                font-weight: 800;
+                font-size: 12px;
+                padding: 4px 8px;
+                border: 1px solid #22C55E;
+                border-radius: 6px;
+                background: transparent;
+            }
+            QCheckBox:hover {
+                background-color: rgba(34, 197, 94, 0.1);
+            }
+            QCheckBox::indicator {
+                width: 16px;
+                height: 16px;
+                border: 2px solid #22C55E;
+                border-radius: 4px;
+                background: #0B1220;
+            }
+            QCheckBox::indicator:checked {
+                background-color: #22C55E;
+                border-color: #22C55E;
+            }
+        """)
+        self.chk_super_simple.toggled.connect(self.toggle_super_simple_mode)
+        
         # Link Panduan
         self.guide_btn = QPushButton("📖 Panduan")
         self.guide_btn.setCursor(Qt.PointingHandCursor)
@@ -1329,6 +1360,24 @@ class MainWindow(QMainWindow):
             QPushButton:hover { background-color: #1E293B; color: #FFFFFF; border-color: #4F46E5; }
         """)
         self.guide_btn.clicked.connect(lambda: QDesktopServices.openUrl(QUrl("https://pramana.web.id/autoyu/panduan/")))
+
+        # Riwayat Button
+        self.history_btn = QPushButton("📊 Riwayat")
+        self.history_btn.setCursor(Qt.PointingHandCursor)
+        self.history_btn.setToolTip("Lihat riwayat upload")
+        self.history_btn.setStyleSheet("""
+            QPushButton { 
+                background: transparent; 
+                border: 1px solid #1E293B; 
+                border-radius: 6px; 
+                color: #94A3B8; 
+                font-weight: 800; 
+                padding: 4px 10px;
+                font-size: 12px;
+            }
+            QPushButton:hover { background-color: #1E293B; color: #FFFFFF; border-color: #4F46E5; }
+        """)
+        self.history_btn.clicked.connect(self.show_event_history)
 
         # WhatsApp Support Button
         self.wa_btn = QPushButton("💬 SUPPORT")
@@ -1351,8 +1400,10 @@ class MainWindow(QMainWindow):
         license_container = QHBoxLayout() # Ubah ke Horizontal agar ikon di samping badge
         license_container.setSpacing(8)
         license_container.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
-        license_container.addWidget(self.wa_btn)
+        license_container.addWidget(self.chk_super_simple)
+        license_container.addWidget(self.history_btn)
         license_container.addWidget(self.guide_btn)
+        license_container.addWidget(self.wa_btn)
         license_container.addWidget(self.license_icon)
         license_container.addWidget(self.license_badge)
         
@@ -1489,9 +1540,9 @@ class MainWindow(QMainWindow):
         config_layout.setContentsMargins(20, 12, 20, 12)
         config_layout.setSpacing(12)
         
-        config_title = QLabel("KONFIGURASI SISTEM")
-        config_title.setProperty("class", "card_title")
-        config_layout.addWidget(config_title)
+        self.config_title = QLabel("KONFIGURASI SISTEM")
+        self.config_title.setProperty("class", "card_title")
+        config_layout.addWidget(self.config_title)
         
         # Initialize Auto Calc Checkbox early to avoid race conditions in signals
         self.chk_auto_calc = QCheckBox("Mode Auto")
@@ -1602,8 +1653,10 @@ class MainWindow(QMainWindow):
         add_form_row("🧩 Setup Metadata", setup_meta_row, 2)
 
         # Preset Metadata
-        preset_row = QHBoxLayout()
-        preset_row.setSpacing(8)
+        self.preset_row_widget = QWidget()
+        self.preset_row = QHBoxLayout(self.preset_row_widget)
+        self.preset_row.setContentsMargins(0, 0, 0, 0)
+        self.preset_row.setSpacing(8)
         
         self.preset_combo = QComboBox()
         self.preset_combo.setPlaceholderText("Pilih Preset...")
@@ -1651,11 +1704,11 @@ class MainWindow(QMainWindow):
         self.btn_delete_preset.setToolTip("Hapus Preset yang dipilih")
         self.btn_delete_preset.clicked.connect(self.delete_current_preset)
         
-        preset_row.addWidget(self.preset_combo, 1)
-        preset_row.addWidget(self.btn_save_preset)
-        preset_row.addWidget(self.btn_delete_preset)
+        self.preset_row.addWidget(self.preset_combo, 1)
+        self.preset_row.addWidget(self.btn_save_preset)
+        self.preset_row.addWidget(self.btn_delete_preset)
         
-        add_form_row("📋 Preset Metadata", preset_row, 3)
+        add_form_row("📋 Preset Metadata", self.preset_row_widget, 3)
         
         # Load preset ke combo
         self._load_presets_to_combo()
@@ -1749,9 +1802,9 @@ class MainWindow(QMainWindow):
         add_form_row("🗺️ Metadata & Deskripsi", location_row, 5)
 
         # 6. ENGINE OPTIMIZATION (Consolidated & Clean)
-        opt_card = QFrame()
-        opt_card.setStyleSheet("background-color: rgba(15, 23, 42, 0.3); border: 1px solid #334155; border-radius: 8px;")
-        opt_v_layout = QVBoxLayout(opt_card)
+        self.opt_card = QFrame()
+        self.opt_card.setStyleSheet("background-color: rgba(15, 23, 42, 0.3); border: 1px solid #334155; border-radius: 8px;")
+        opt_v_layout = QVBoxLayout(self.opt_card)
         opt_v_layout.setContentsMargins(16, 16, 16, 16)
         opt_v_layout.setSpacing(12)
 
@@ -1851,7 +1904,7 @@ class MainWindow(QMainWindow):
         self.dynamic_helper.setVisible(False)
         opt_v_layout.addWidget(self.dynamic_helper)
 
-        grid.addWidget(opt_card, 7, 0, 1, 2)
+        grid.addWidget(self.opt_card, 7, 0, 1, 2)
 
         config_layout.addLayout(grid)
         self.content_layout.addWidget(config_card)
@@ -2157,6 +2210,13 @@ class MainWindow(QMainWindow):
                 self.chk_auto_calc.setChecked(settings["auto_calc"])
             if "auto_retry" in settings:
                 self.chk_auto_retry.setChecked(settings["auto_retry"])
+            
+            # Load Super Simple Mode preference
+            if "super_simple_mode" in settings:
+                self.chk_super_simple.blockSignals(True)
+                self.chk_super_simple.setChecked(settings["super_simple_mode"])
+                self.toggle_super_simple_mode(settings["super_simple_mode"])
+                self.chk_super_simple.blockSignals(False)
             
             # Mode dikunci SAFE (utama + lite)
             self.radio_safe.setChecked(True)
@@ -4351,6 +4411,39 @@ class MainWindow(QMainWindow):
         dlg.exec()
         self.login_confirm_btn.setVisible(False)
 
+    def show_event_history(self):
+        """Shows Event History Dialog."""
+        dlg = EventHistoryDialog(self)
+        dlg.exec()
+    
+    def toggle_super_simple_mode(self, checked):
+        """Toggle Super Simple mode and save preference."""
+        # Save to settings
+        try:
+            settings = load_settings() or {}
+            settings["super_simple_mode"] = checked
+            save_settings(settings)
+        except Exception:
+            pass
+        
+        # Sembunyikan seluruh opt_card (Engine Optimization)
+        self.opt_card.setVisible(not checked)
+        
+        # Sembunyikan preset row widget
+        self.preset_row_widget.setVisible(not checked)
+        
+        # Sembunyikan judul "KONFIGURASI SISTEM"
+        self.config_title.setVisible(not checked)
+        
+        # Sembunyikan elemen individual lainnya
+        self.btn_remove_account.setVisible(not checked)
+        self.reset_tracker_btn.setVisible(not checked)
+        
+        if checked:
+            self.log_message("✨ Mode Simple Aktif! UI menjadi lebih sederhana.")
+        else:
+            self.log_message("⚙️ Mode Simple Nonaktif. Semua pengaturan tersedia kembali.")
+
     def _format_bytes(self, b):
         gb = b / (1024 * 1024 * 1024)
         return f"{gb:.1f} GB"
@@ -4661,6 +4754,302 @@ class MainWindow(QMainWindow):
             else:
                 max_tabs = 12
             return {"tabs": max_tabs, "batch": base_batch, "mode": "SAFE"}
+
+
+class EventHistoryDialog(QDialog):
+    """Dialog untuk menampilkan riwayat event upload"""
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Riwayat Upload")
+        self.setMinimumSize(1000, 600)
+        self.setAttribute(Qt.WA_StyledBackground, True)
+        self.event_history = EventHistory()
+        self.init_ui()
+        self.load_history()
+
+    def init_ui(self):
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(20, 20, 20, 20)
+        layout.setSpacing(15)
+
+        # Header
+        header_layout = QHBoxLayout()
+        title = QLabel("📊 Riwayat Upload")
+        title.setStyleSheet("""
+            font-size: 24px;
+            font-weight: 900;
+            color: #FFFFFF;
+            letter-spacing: -0.5px;
+        """)
+        header_layout.addWidget(title)
+        header_layout.addStretch()
+
+        # Buttons
+        refresh_btn = QPushButton("🔄 Refresh")
+        refresh_btn.setCursor(Qt.PointingHandCursor)
+        refresh_btn.setFixedHeight(40)
+        refresh_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #334155;
+                color: #E2E8F0;
+                border: 1px solid #475569;
+                border-radius: 8px;
+                padding: 8px 20px;
+                font-weight: 700;
+                font-size: 14px;
+            }
+            QPushButton:hover {
+                background-color: #475569;
+                border-color: #6366F1;
+            }
+        """)
+        refresh_btn.clicked.connect(self.load_history)
+
+        clear_btn = QPushButton("🗑️ Hapus Semua")
+        clear_btn.setCursor(Qt.PointingHandCursor)
+        clear_btn.setFixedHeight(40)
+        clear_btn.setStyleSheet("""
+            QPushButton {
+                background-color: transparent;
+                color: #EF4444;
+                border: 1px dashed #EF4444;
+                border-radius: 8px;
+                padding: 8px 20px;
+                font-weight: 700;
+                font-size: 14px;
+            }
+            QPushButton:hover {
+                background-color: rgba(239, 68, 68, 0.1);
+            }
+        """)
+        clear_btn.clicked.connect(self.clear_history)
+
+        header_layout.addWidget(refresh_btn)
+        header_layout.addWidget(clear_btn)
+        layout.addLayout(header_layout)
+
+        # Stats overview
+        self.stats_frame = QFrame()
+        self.stats_frame.setStyleSheet("""
+            QFrame {
+                background-color: #1E293B;
+                border: 1px solid #334155;
+                border-radius: 12px;
+            }
+        """)
+        stats_layout = QHBoxLayout(self.stats_frame)
+        stats_layout.setContentsMargins(20, 15, 20, 15)
+        stats_layout.setSpacing(20)
+
+        self.total_events_label = self.create_stat_card("Total Event", "0", "#6366F1")
+        self.total_files_label = self.create_stat_card("Total File", "0", "#10B981")
+        self.success_rate_label = self.create_stat_card("Rate Sukses", "0%", "#8B5CF6")
+
+        stats_layout.addWidget(self.total_events_label)
+        stats_layout.addWidget(self.total_files_label)
+        stats_layout.addWidget(self.success_rate_label)
+        layout.addWidget(self.stats_frame)
+
+        # Table
+        self.table = QTableWidget()
+        self.table.setStyleSheet("""
+            QTableWidget {
+                background-color: #1E293B;
+                border: 1px solid #334155;
+                border-radius: 12px;
+                gridline-color: #334155;
+                selection-background-color: #334155;
+            }
+            QTableWidget::item {
+                padding: 8px;
+                color: #E2E8F0;
+                border: none;
+            }
+            QTableWidget::item:selected {
+                background-color: #334155;
+            }
+            QHeaderView::section {
+                background-color: #0F172A;
+                color: #94A3B8;
+                padding: 12px 8px;
+                border: none;
+                border-bottom: 1px solid #334155;
+                font-weight: 700;
+                font-size: 12px;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+            }
+            QTableWidget QTableCornerButton::section {
+                background-color: #0F172A;
+                border: none;
+            }
+            QScrollBar:vertical {
+                border: none;
+                background: #0F172A;
+                width: 12px;
+                border-radius: 6px;
+                margin: 0px;
+            }
+            QScrollBar::handle:vertical {
+                background: #334155;
+                min-height: 30px;
+                border-radius: 6px;
+            }
+            QScrollBar::handle:vertical:hover {
+                background: #475569;
+            }
+        """)
+        self.table.setAlternatingRowColors(False)
+        self.table.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self.table.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.table.setColumnCount(12)
+        self.table.setHorizontalHeaderLabels([
+            "Waktu", "Akun", "Tipe", "Total File", 
+            "Sukses", "Gagal", "Duplikat", "Durasi", 
+            "Harga", "Deskripsi", "Lokasi", "FotoTree"
+        ])
+        self.table.horizontalHeader().setStretchLastSection(True)
+        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+        layout.addWidget(self.table)
+
+        # Close button
+        close_btn = QPushButton("Tutup")
+        close_btn.setCursor(Qt.PointingHandCursor)
+        close_btn.setFixedHeight(45)
+        close_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #4F46E5;
+                color: white;
+                border: none;
+                border-radius: 8px;
+                font-weight: 800;
+                font-size: 15px;
+            }
+            QPushButton:hover {
+                background-color: #6366F1;
+            }
+        """)
+        close_btn.clicked.connect(self.accept)
+        layout.addWidget(close_btn)
+
+        self.setStyleSheet("""
+            EventHistoryDialog {
+                background-color: #0F172A;
+                border: 1px solid #334155;
+                border-radius: 12px;
+            }
+        """)
+
+    def create_stat_card(self, title, value, color):
+        """Membuat kartu statistik"""
+        card = QFrame()
+        card.setStyleSheet("""
+            QFrame {
+                background-color: transparent;
+            }
+        """)
+        layout = QVBoxLayout(card)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(5)
+
+        title_label = QLabel(title)
+        title_label.setStyleSheet("""
+            color: #94A3B8;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        """)
+
+        value_label = QLabel(value)
+        value_label.setObjectName("value")  # Set objectName disini!
+        value_label.setStyleSheet(f"""
+            color: {color};
+            font-size: 28px;
+            font-weight: 900;
+        """)
+
+        layout.addWidget(title_label)
+        layout.addWidget(value_label)
+        return card
+
+    def load_history(self):
+        """Memuat dan menampilkan riwayat"""
+        history = self.event_history.load_history()
+        self.table.setRowCount(0)
+
+        # Hitung statistik
+        total_events = len(history)
+        total_files = sum(h.get("total_files", 0) for h in history)
+        total_success = sum(h.get("success_count", 0) for h in history)
+        success_rate = 0
+        if total_files > 0:
+            success_rate = int((total_success / total_files) * 100)
+
+        # Update stats
+        self.total_events_label.findChild(QLabel, "value").setText(str(total_events))
+        self.total_files_label.findChild(QLabel, "value").setText(f"{total_files:,}")
+        self.success_rate_label.findChild(QLabel, "value").setText(f"{success_rate}%")
+
+        # Isi tabel
+        for row_idx, event in enumerate(history):
+            self.table.insertRow(row_idx)
+            
+            # Format waktu
+            timestamp = event.get("timestamp", "")
+            if timestamp:
+                try:
+                    dt = QDateTime.fromString(timestamp, Qt.ISODate)
+                    time_str = dt.toString("dd/MM/yyyy HH:mm:ss")
+                except:
+                    time_str = timestamp
+            else:
+                time_str = "-"
+            
+            # Format durasi
+            duration = event.get("duration_seconds", 0)
+            if duration < 60:
+                duration_str = f"{duration}d"
+            else:
+                minutes = duration // 60
+                seconds = duration % 60
+                duration_str = f"{minutes}m {seconds}d"
+
+            # Data baris
+            data = [
+                time_str,
+                event.get("account_name", "-"),
+                "📷 Foto" if event.get("upload_type") == "foto" else "🎥 Video",
+                str(event.get("total_files", 0)),
+                str(event.get("success_count", 0)),
+                str(event.get("failed_count", 0)),
+                str(event.get("duplicate_count", 0)),
+                duration_str,
+                event.get("price", "-"),
+                event.get("description", "-"),
+                event.get("location", "-"),
+                event.get("fototree", "-")
+            ]
+
+            for col_idx, value in enumerate(data):
+                item = QTableWidgetItem(str(value))
+                item.setTextAlignment(Qt.AlignCenter)
+                self.table.setItem(row_idx, col_idx, item)
+
+    def clear_history(self):
+        """Menghapus semua riwayat"""
+        reply = QMessageBox.question(
+            self,
+            "Konfirmasi",
+            "Apakah Anda yakin ingin menghapus semua riwayat?",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No
+        )
+        if reply == QMessageBox.Yes:
+            self.event_history.clear_all_history()
+            self.load_history()
+            self.show_custom_message("Berhasil", "Riwayat telah dihapus.", "info")
+
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

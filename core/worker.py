@@ -11,6 +11,7 @@ from core.automation import TabAutomation
 from core.state_machine import AutoState, UploadMode, MODE_CONFIG
 from core.license import check_license, get_app_data_dir, get_app_data_dir_by_name
 from core.playwright_runtime import configure_playwright_browser_path, find_executable, resolve_internal_chromium_executable
+from core.event_history import EventHistory
 
 class AutomationWorker(QThread):
     log_signal = Signal(str)
@@ -1297,6 +1298,29 @@ class AutomationWorker(QThread):
                 # Update progress bar satu kali terakhir agar sinkron dengan ringkasan
                 total_duplicate = sum(tab.duplicate_count for tab in tabs)
                 self.progress_signal.emit(session_success, session_failed, total_duplicate, 0, total_files)
+                
+                # Simpan ke riwayat event
+                try:
+                    event_history = EventHistory()
+                    event_data = {
+                        "account_name": self.config.get("current_account", "Tidak Diketahui"),
+                        "upload_type": self.config.get("type", "foto"),
+                        "folder_path": self.config.get("folder", ""),
+                        "total_files": total_files,
+                        "success_count": session_success,
+                        "failed_count": session_failed,
+                        "duplicate_count": total_duplicate,
+                        "duration_seconds": int(time.time() - engine_start_time),
+                        "price": self.config.get("price", ""),
+                        "description": self.config.get("desc", ""),
+                        "location": self.config.get("location", ""),
+                        "fototree": self.config.get("fototree", ""),
+                        "tabs_used": num_tabs,
+                        "batch_size": self.config.get("batch_size", 0)
+                    }
+                    event_history.add_event(event_data)
+                except Exception as e:
+                    print(f"Error saving event history: {e}")
                 
                 self.batch_finished_signal.emit(session_success, session_failed)
                 finished_signal_emitted = True
