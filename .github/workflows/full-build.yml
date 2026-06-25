@@ -60,42 +60,49 @@ jobs:
         name: AutoYuPro-Windows
         path: release_pro/*
 
-  # --- MAC INTEL BUILD (macos-12 native, no queue) ---
+  # --- MAC INTEL BUILD (macos-14 + Rosetta + Miniforge x86_64, NO QUEUE) ---
   build-macos-intel:
     name: Build for Intel
-    runs-on: macos-12
+    runs-on: macos-14
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
       MACOSX_DEPLOYMENT_TARGET: '11.0'
       PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/pw-browsers
+      CONDA: ${{ github.workspace }}/miniforge3
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.10.15'
-          architecture: x64
-          cache: 'pip'
-
-      - name: Show Python Runtime
+      - name: Install Miniforge x86_64 (via Rosetta)
         run: |
+          # Download Miniforge x86_64
+          curl -L -o Miniforge3-MacOSX-x86_64.sh https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-MacOSX-x86_64.sh
+          # Install silently
+          arch -x86_64 bash Miniforge3-MacOSX-x86_64.sh -b -p $CONDA
+          # Initialize conda
+          source $CONDA/etc/profile.d/conda.sh
+          # Create environment with Python 3.10
+          conda create -y -n autoyu python=3.10
+          conda activate autoyu
+          # Show Python
+          which python
           python -VV
           python -c "import platform, sys; print(platform.platform()); print(platform.machine()); print(sys.executable)"
 
-      - name: Cache Playwright Browsers
+      - name: Cache Playwright Browsers (Intel)
         uses: actions/cache@v4
-        id: cache-playwright
+        id: cache-playwright-intel
         with:
           path: ${{ env.PLAYWRIGHT_BROWSERS_PATH }}
-          key: macos-12-intel-playwright-${{ hashFiles('requirements.txt') }}
+          key: macos-14-x86_64-playwright-${{ hashFiles('requirements.txt') }}
           restore-keys: |
-            macos-12-intel-playwright-
-            macos-12-playwright-
+            macos-14-x86_64-playwright-
+            macos-14-playwright-
 
-      - name: Install Dependencies
+      - name: Install Dependencies (Intel)
         run: |
+          source $CONDA/etc/profile.d/conda.sh
+          conda activate autoyu
           python -m pip install --upgrade pip
           python -m pip install --upgrade setuptools wheel
           python -m pip install -r requirements.txt
@@ -105,14 +112,18 @@ jobs:
           python -m pip install --only-binary cryptography --no-cache-dir cryptography
           python -m pip install pyinstaller
 
-      - name: Inspect Cryptography Linkage
+      - name: Inspect Cryptography Linkage (Intel)
         run: |
+          source $CONDA/etc/profile.d/conda.sh
+          conda activate autoyu
           CRYPTO_SO=$(python -c "import cryptography.hazmat.bindings._rust as m; print(m.__file__)")
           echo "cryptography binding: $CRYPTO_SO"
           otool -L "$CRYPTO_SO" || true
 
       - name: Create macOS Icon
         run: |
+          source $CONDA/etc/profile.d/conda.sh
+          conda activate autoyu
           python -c "from PIL import Image; img = Image.open('icon.ico'); img.save('icon.png')"
           mkdir -p icon.iconset
           sips -z 16 16     icon.png --out icon.iconset/icon_16x16.png
@@ -128,13 +139,17 @@ jobs:
           iconutil -c icns icon.iconset
           cp icon.icns assets/icon.icns || cp icon.icns icon.icns
 
-      - name: Install Playwright Browsers
-        if: steps.cache-playwright.outputs.cache-hit != 'true'
+      - name: Install Playwright Browsers (Intel)
+        if: steps.cache-playwright-intel.outputs.cache-hit != 'true'
         run: |
+          source $CONDA/etc/profile.d/conda.sh
+          conda activate autoyu
           python -m playwright install chromium chromium-headless-shell ffmpeg
 
-      - name: Build Main Version (AutoYu Pro)
+      - name: Build Main Version (AutoYu Pro Intel)
         run: |
+          source $CONDA/etc/profile.d/conda.sh
+          conda activate autoyu
           python -m PyInstaller --clean --noconfirm AutoYuPro.spec
           # Copy only the browser runtimes we actually need, then remove bulky extras.
           if [ -d "pw-browsers" ]; then
@@ -150,9 +165,9 @@ jobs:
 
       - name: Smoke Test (macOS Pro Intel)
         run: |
-          ./dist/AutoYuPro.app/Contents/MacOS/AutoYuPro --smoke-test
+          arch -x86_64 ./dist/AutoYuPro.app/Contents/MacOS/AutoYuPro --smoke-test
 
-      - name: Prepare Artifacts
+      - name: Prepare Artifacts (Intel)
         run: |
           mkdir -p release_pro
           cp PANDUAN_USER.txt release_pro/
@@ -163,7 +178,7 @@ jobs:
             cd dist && zip -r9y ../release_pro/AutoYuPro-Intel.zip AutoYuPro.app && cd ..
           fi
 
-      - name: Upload Pro Artifact
+      - name: Upload Pro Artifact (Intel)
         uses: actions/upload-artifact@v4
         with:
           name: AutoYuPro-macOS-Intel
@@ -177,25 +192,30 @@ jobs:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
       MACOSX_DEPLOYMENT_TARGET: '11.0'
       PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/pw-browsers
+      CONDA: ${{ github.workspace }}/miniforge3
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.10.15'
-          architecture: arm64
-          cache: 'pip'
-
-      - name: Show Python Runtime
+      - name: Install Miniforge arm64 (native)
         run: |
+          # Download Miniforge arm64
+          curl -L -o Miniforge3-MacOSX-arm64.sh https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-MacOSX-arm64.sh
+          # Install silently
+          bash Miniforge3-MacOSX-arm64.sh -b -p $CONDA
+          # Initialize conda
+          source $CONDA/etc/profile.d/conda.sh
+          # Create environment with Python 3.10
+          conda create -y -n autoyu python=3.10
+          conda activate autoyu
+          # Show Python
+          which python
           python -VV
           python -c "import platform, sys; print(platform.platform()); print(platform.machine()); print(sys.executable)"
 
-      - name: Cache Playwright Browsers
+      - name: Cache Playwright Browsers (Apple Silicon)
         uses: actions/cache@v4
-        id: cache-playwright
+        id: cache-playwright-arm64
         with:
           path: ${{ env.PLAYWRIGHT_BROWSERS_PATH }}
           key: macos-14-arm64-playwright-${{ hashFiles('requirements.txt') }}
@@ -203,8 +223,10 @@ jobs:
             macos-14-arm64-playwright-
             macos-14-playwright-
 
-      - name: Install Dependencies
+      - name: Install Dependencies (Apple Silicon)
         run: |
+          source $CONDA/etc/profile.d/conda.sh
+          conda activate autoyu
           python -m pip install --upgrade pip
           python -m pip install --upgrade setuptools wheel
           python -m pip install -r requirements.txt
@@ -214,14 +236,18 @@ jobs:
           python -m pip install --only-binary cryptography --no-cache-dir cryptography
           python -m pip install pyinstaller
 
-      - name: Inspect Cryptography Linkage
+      - name: Inspect Cryptography Linkage (Apple Silicon)
         run: |
+          source $CONDA/etc/profile.d/conda.sh
+          conda activate autoyu
           CRYPTO_SO=$(python -c "import cryptography.hazmat.bindings._rust as m; print(m.__file__)")
           echo "cryptography binding: $CRYPTO_SO"
           otool -L "$CRYPTO_SO" || true
 
       - name: Create macOS Icon
         run: |
+          source $CONDA/etc/profile.d/conda.sh
+          conda activate autoyu
           python -c "from PIL import Image; img = Image.open('icon.ico'); img.save('icon.png')"
           mkdir -p icon.iconset
           sips -z 16 16     icon.png --out icon.iconset/icon_16x16.png
@@ -237,13 +263,17 @@ jobs:
           iconutil -c icns icon.iconset
           cp icon.icns assets/icon.icns || cp icon.icns icon.icns
 
-      - name: Install Playwright Browsers
-        if: steps.cache-playwright.outputs.cache-hit != 'true'
+      - name: Install Playwright Browsers (Apple Silicon)
+        if: steps.cache-playwright-arm64.outputs.cache-hit != 'true'
         run: |
+          source $CONDA/etc/profile.d/conda.sh
+          conda activate autoyu
           python -m playwright install chromium chromium-headless-shell ffmpeg
 
-      - name: Build Main Version (AutoYu Pro)
+      - name: Build Main Version (AutoYu Pro Apple Silicon)
         run: |
+          source $CONDA/etc/profile.d/conda.sh
+          conda activate autoyu
           python -m PyInstaller --clean --noconfirm AutoYuPro.spec
           # Copy only the browser runtimes we actually need, then remove bulky extras.
           if [ -d "pw-browsers" ]; then
@@ -261,7 +291,7 @@ jobs:
         run: |
           ./dist/AutoYuPro.app/Contents/MacOS/AutoYuPro --smoke-test
 
-      - name: Prepare Artifacts
+      - name: Prepare Artifacts (Apple Silicon)
         run: |
           mkdir -p release_pro
           cp PANDUAN_USER.txt release_pro/
@@ -272,7 +302,7 @@ jobs:
             cd dist && zip -r9y ../release_pro/AutoYuPro-AppleSilicon.zip AutoYuPro.app && cd ..
           fi
 
-      - name: Upload Pro Artifact
+      - name: Upload Pro Artifact (Apple Silicon)
         uses: actions/upload-artifact@v4
         with:
           name: AutoYuPro-macOS-AppleSilicon
