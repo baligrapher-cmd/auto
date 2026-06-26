@@ -3,7 +3,7 @@
 
 import os
 from PyInstaller.utils.hooks import collect_data_files
-os.environ['MACOSX_DEPLOYMENT_TARGET'] = '11.0'
+os.environ['MACOSX_DEPLOYMENT_TARGET'] = '10.15'
 
 # Collect Playwright's data files (driver, etc.)
 playwright_datas = collect_data_files('playwright')

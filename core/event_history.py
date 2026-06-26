@@ -11,41 +11,25 @@ class EventHistory:
         self.app_data_dir = get_app_data_dir()
         self.history_file = os.path.join(self.app_data_dir, "event_history.json")
         self._ensure_dir()
-        # Cache optimization
-        self._cached_history: Optional[List[Dict]] = None
-        self._last_cache_load = 0.0
-        self._cache_ttl = 2.0  # Cache valid for 2 seconds
 
     def _ensure_dir(self):
         if not os.path.exists(self.app_data_dir):
             os.makedirs(self.app_data_dir, exist_ok=True)
 
     def load_history(self) -> List[Dict]:
-        # Check cache first
-        now = time.time()
-        if self._cached_history is not None and (now - self._last_cache_load) < self._cache_ttl:
-            return self._cached_history.copy()
-        
         try:
             if os.path.exists(self.history_file):
                 with open(self.history_file, 'r', encoding='utf-8') as f:
                     data = json.load(f)
-                    self._cached_history = data if isinstance(data, list) else []
-                    self._last_cache_load = now
-                    return self._cached_history.copy()
+                    return data if isinstance(data, list) else []
         except Exception as e:
             print(f"[EventHistory] Error loading: {e}")
-        self._cached_history = []
-        self._last_cache_load = now
         return []
 
     def save_history(self, history: List[Dict]):
         try:
             with open(self.history_file, 'w', encoding='utf-8') as f:
                 json.dump(history, f, ensure_ascii=False, indent=2)
-            # Update cache
-            self._cached_history = history.copy()
-            self._last_cache_load = time.time()
         except Exception as e:
             print(f"[EventHistory] Error saving: {e}")
 
