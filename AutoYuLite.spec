@@ -2,8 +2,20 @@
 
 
 import os
+import sys
 from PyInstaller.utils.hooks import collect_data_files
 os.environ['MACOSX_DEPLOYMENT_TARGET'] = '10.15'
+
+# Determine target architecture
+target_arch = os.environ.get('TARGET_ARCH', None)
+if sys.platform == 'darwin' and not target_arch:
+    # Try to detect from sys.platform
+    import platform
+    machine = platform.machine()
+    if machine == 'x86_64':
+        target_arch = 'x86_64'
+    elif machine == 'arm64':
+        target_arch = 'arm64'
 
 # Collect Playwright's data files (driver, etc.)
 playwright_datas = collect_data_files('playwright')
@@ -12,7 +24,7 @@ a = Analysis(
     ['main_lite.py'],
     pathex=[],
     binaries=[],
-    datas=[('PANDUAN_USER.txt', '.'), ('icon.ico', '.')] + playwright_datas,
+    datas=[('PANDUAN_LITE_MAC.txt', '.'), ('icon.ico', '.')] + playwright_datas,
     hiddenimports=[
         'encodings',
         'encodings.utf_8',
@@ -62,7 +74,7 @@ exe = EXE(
     console=False,
     disable_windowed_traceback=False,
     argv_emulation=False,
-    target_arch=None,
+    target_arch=target_arch,
     codesign_identity=None,
     entitlements_file=None,
     icon=[icon_path],
