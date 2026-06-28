@@ -4,7 +4,7 @@
 import os
 import sys
 from PyInstaller.utils.hooks import collect_data_files
-os.environ['MACOSX_DEPLOYMENT_TARGET'] = '10.15'
+os.environ['MACOSX_DEPLOYMENT_TARGET'] = '11.0'
 
 # Determine target architecture
 target_arch = os.environ.get('TARGET_ARCH', None)
