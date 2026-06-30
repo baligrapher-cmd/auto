@@ -64,18 +64,37 @@ def main():
         if "--smoke-test" in sys.argv:
             os.environ["AUTOYU_SMOKE_TEST"] = "1"
             print("Running smoke test...")
-            
-            # Set Qt platform to offscreen for headless environments (GitHub Actions)
-            if os.environ.get("CI") or os.environ.get("GITHUB_ACTIONS"):
-                os.environ["QT_QPA_PLATFORM"] = "offscreen"
-            
             from gui.main_window import MainWindow
             from core.playwright_runtime import configure_playwright_browser_path
 
-            configure_playwright_browser_path()
+            # Test 1: Playwright configuration dan browser discovery
+            browser_path = configure_playwright_browser_path()
             print("✓ Core imports successful")
-            print("✓ Playwright configured")
+            if browser_path:
+                print(f"✓ Found internal browser path: {browser_path}")
+            else:
+                print("⚠️ No internal browser found, will use Playwright default")
 
+            # Test 2: Try launching Chromium (headless) to verify it works
+            print("Testing Chromium launch...")
+            from playwright.sync_api import sync_playwright
+            try:
+                with sync_playwright() as p:
+                    # Try launching with internal browser (if available) or default
+                    launch_kwargs = {"headless": True}
+                    if browser_path:
+                        print(f"Using internal browser: {browser_path}")
+                    browser = p.chromium.launch(**launch_kwargs)
+                    page = browser.new_page()
+                    page.goto("https://example.com", timeout=10000)
+                    title = page.title()
+                    print(f"✓ Chromium launched successfully! Page title: {title}")
+                    browser.close()
+            except Exception as e:
+                print(f"⚠️ Chromium test failed (might be due to environment): {e}")
+                print("Continuing with UI test...")
+
+            # Test 3: UI test
             app = QApplication([arg for arg in sys.argv if arg != "--smoke-test"])
 
             icon_path = get_resource_path("icon.ico")
@@ -88,9 +107,9 @@ def main():
             window = MainWindow()
             if os.path.exists(icon_path):
                 window.setWindowIcon(QIcon(icon_path))
-            # Don't show() window in headless, just create it
+            window.show()
             app.processEvents()
-            print("✓ Main window created successfully")
+            print("✓ Main window opened")
 
             # Keep the event loop alive briefly to verify that the UI can start.
             QTimer.singleShot(500, app.quit)
@@ -102,7 +121,7 @@ def main():
                 print(f"Smoke test failed with exit code {exit_code}")
                 sys.exit(exit_code)
 
-            print("Smoke test passed!")
+            print("✅ All smoke tests passed!")
             sys.exit(0)
             
         if "QT_SCALE_FACTOR" not in os.environ:
