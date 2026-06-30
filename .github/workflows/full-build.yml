@@ -150,10 +150,27 @@ jobs:
           source $CONDA/etc/profile.d/conda.sh
           conda activate autoyu
           arch -x86_64 python -m PyInstaller --clean --noconfirm AutoYuPro.spec
+          
+          # Debug: List what's in dist/
+          echo "--- Debug: Contents of dist/ ---"
+          ls -la dist/
+          
           # Copy only the browser runtimes we actually need, then remove bulky extras.
           if [ -d "pw-browsers" ]; then
+            echo "--- Debug: Contents of pw-browsers/ ---"
+            ls -la pw-browsers/
+            
             mkdir -p dist/AutoYuPro.app/Contents/Resources/browsers
             find pw-browsers -maxdepth 1 -type d \( -name "chromium-*" -o -name "ffmpeg-*" \) -exec cp -R {} dist/AutoYuPro.app/Contents/Resources/browsers/ \;
+            
+            # Debug: Check if browsers folder copied successfully
+            echo "--- Debug: Contents of dist/AutoYuPro.app/Contents/Resources/ ---"
+            ls -la dist/AutoYuPro.app/Contents/Resources/
+            if [ -d "dist/AutoYuPro.app/Contents/Resources/browsers" ]; then
+              echo "--- Debug: Contents of dist/AutoYuPro.app/Contents/Resources/browsers/ ---"
+              ls -la dist/AutoYuPro.app/Contents/Resources/browsers/
+            fi
+            
             find dist/AutoYuPro.app/Contents/Resources/browsers -name "translations" -type d -exec rm -rf {} +
             find dist/AutoYuPro.app/Contents/Resources/browsers -name "*.zip" -delete
             find dist/AutoYuPro.app/Contents/Resources/browsers -name "*.gz" -delete
@@ -294,10 +311,27 @@ jobs:
           source $CONDA/etc/profile.d/conda.sh
           conda activate autoyu
           python -m PyInstaller --clean --noconfirm AutoYuPro.spec
+          
+          # Debug: List what's in dist/
+          echo "--- Debug: Contents of dist/ ---"
+          ls -la dist/
+          
           # Copy only the browser runtimes we actually need, then remove bulky extras.
           if [ -d "pw-browsers" ]; then
+            echo "--- Debug: Contents of pw-browsers/ ---"
+            ls -la pw-browsers/
+            
             mkdir -p dist/AutoYuPro.app/Contents/Resources/browsers
             find pw-browsers -maxdepth 1 -type d \( -name "chromium-*" -o -name "ffmpeg-*" \) -exec cp -R {} dist/AutoYuPro.app/Contents/Resources/browsers/ \;
+            
+            # Debug: Check if browsers folder copied successfully
+            echo "--- Debug: Contents of dist/AutoYuPro.app/Contents/Resources/ ---"
+            ls -la dist/AutoYuPro.app/Contents/Resources/
+            if [ -d "dist/AutoYuPro.app/Contents/Resources/browsers" ]; then
+              echo "--- Debug: Contents of dist/AutoYuPro.app/Contents/Resources/browsers/ ---"
+              ls -la dist/AutoYuPro.app/Contents/Resources/browsers/
+            fi
+            
             find dist/AutoYuPro.app/Contents/Resources/browsers -name "translations" -type d -exec rm -rf {} +
             find dist/AutoYuPro.app/Contents/Resources/browsers -name "*.zip" -delete
             find dist/AutoYuPro.app/Contents/Resources/browsers -name "*.gz" -delete

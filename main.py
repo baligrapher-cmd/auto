@@ -71,11 +71,38 @@ def main():
             os.environ["AUTOYU_SMOKE_TEST"] = "1"
             print("Running smoke test...")
             from gui.main_window import MainWindow
-            from core.playwright_runtime import configure_playwright_browser_path
+            from core.playwright_runtime import configure_playwright_browser_path, get_playwright_browser_candidates
+
+            # Debug info
+            print("--- Debug: Environment ---")
+            print(f"sys.platform: {sys.platform}")
+            print(f"sys.frozen: {getattr(sys, 'frozen', False)}")
+            if hasattr(sys, '_MEIPASS'):
+                print(f"sys._MEIPASS: {sys._MEIPASS}")
+                print(f"Contents of _MEIPASS: {os.listdir(sys._MEIPASS) if os.path.exists(sys._MEIPASS) else 'NOT FOUND'}")
+            print(f"sys.executable: {sys.executable}")
+            exe_dir = os.path.dirname(os.path.abspath(sys.executable))
+            print(f"exe_dir: {exe_dir}")
+            if sys.platform == "darwin" and os.path.basename(exe_dir) == "MacOS":
+                contents_dir = os.path.dirname(exe_dir)
+                resources_dir = os.path.join(contents_dir, "Resources")
+                print(f"Contents dir: {contents_dir}")
+                print(f"Resources dir: {resources_dir}")
+                if os.path.exists(resources_dir):
+                    print(f"Contents of Resources dir: {os.listdir(resources_dir)}")
 
             # Test 1: Playwright configuration dan browser discovery
+            print("\n--- Debug: Browser candidates ---")
+            candidates = get_playwright_browser_candidates()
+            for i, candidate in enumerate(candidates):
+                print(f"Candidate {i+1}: {candidate}")
+                if os.path.exists(candidate):
+                    print(f"  EXISTS, contents: {os.listdir(candidate)[:10]}")  # Only show first 10 entries
+                else:
+                    print(f"  NOT FOUND")
+
             browser_path = configure_playwright_browser_path()
-            print("✓ Core imports successful")
+            print("\n✓ Core imports successful")
             if browser_path:
                 print(f"✓ Found internal browser path: {browser_path}")
             else:
