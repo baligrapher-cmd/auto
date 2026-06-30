@@ -160,6 +160,20 @@ jobs:
             find dist/AutoYuPro.app/Contents/Resources/browsers -name "*.dSYM" -type d -exec rm -rf {} +
             find dist/AutoYuPro.app/Contents/Resources/browsers -name "obj" -type d -exec rm -rf {} +
             find dist/AutoYuPro.app/Contents/Resources/browsers -name "gen" -type d -exec rm -rf {} +
+            
+            # Clean extended attributes and fix permissions before codesign
+            echo "Fixing permissions and extended attributes..."
+            xattr -cr dist/AutoYuPro.app/Contents/Resources/browsers || true
+            chmod -R 755 dist/AutoYuPro.app/Contents/Resources/browsers || true
+            
+            # Codesign Chromium bundles first if they exist
+            echo "Codesigning internal browser components..."
+            for chromium_app in dist/AutoYuPro.app/Contents/Resources/browsers/chromium-*/chrome-mac*/Chromium*.app; do
+              if [ -d "$chromium_app" ]; then
+                echo "Codesigning: $chromium_app"
+                codesign --force --deep --sign - "$chromium_app" || true
+              fi
+            done
           fi
           # Ad-hoc codesign to avoid "App is damaged" error
           codesign --force --deep --sign - dist/AutoYuPro.app
@@ -290,6 +304,20 @@ jobs:
             find dist/AutoYuPro.app/Contents/Resources/browsers -name "*.dSYM" -type d -exec rm -rf {} +
             find dist/AutoYuPro.app/Contents/Resources/browsers -name "obj" -type d -exec rm -rf {} +
             find dist/AutoYuPro.app/Contents/Resources/browsers -name "gen" -type d -exec rm -rf {} +
+            
+            # Clean extended attributes and fix permissions before codesign
+            echo "Fixing permissions and extended attributes..."
+            xattr -cr dist/AutoYuPro.app/Contents/Resources/browsers || true
+            chmod -R 755 dist/AutoYuPro.app/Contents/Resources/browsers || true
+            
+            # Codesign Chromium bundles first if they exist
+            echo "Codesigning internal browser components..."
+            for chromium_app in dist/AutoYuPro.app/Contents/Resources/browsers/chromium-*/chrome-mac*/Chromium*.app; do
+              if [ -d "$chromium_app" ]; then
+                echo "Codesigning: $chromium_app"
+                codesign --force --deep --sign - "$chromium_app" || true
+              fi
+            done
           fi
           # Ad-hoc codesign to avoid "App is damaged" error
           codesign --force --deep --sign - dist/AutoYuPro.app

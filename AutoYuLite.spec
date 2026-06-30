@@ -20,14 +20,15 @@ if sys.platform == 'darwin' and not target_arch:
 # Collect Playwright's data files (driver, etc.)
 playwright_datas = collect_data_files('playwright')
 
-# Collect browsers folder if available (for CI builds)
+# Collect browsers folder if available (for CI builds, only Windows/Linux, macOS handled manually in workflow)
 datas_list = [('PANDUAN_LITE_MAC.txt', '.'), ('icon.ico', '.')] + playwright_datas
-if os.path.exists('browsers'):
-    print(f"[SPEC] Adding browsers folder to bundle...")
-    datas_list.append(('browsers', 'browsers'))
-if os.path.exists('pw-browsers'):
-    print(f"[SPEC] Adding pw-browsers folder to bundle...")
-    datas_list.append(('pw-browsers', 'browsers'))
+if sys.platform != 'darwin':
+    if os.path.exists('browsers'):
+        print(f"[SPEC] Adding browsers folder to bundle...")
+        datas_list.append(('browsers', 'browsers'))
+    if os.path.exists('pw-browsers'):
+        print(f"[SPEC] Adding pw-browsers folder to bundle...")
+        datas_list.append(('pw-browsers', 'browsers'))
 
 a = Analysis(
     ['main_lite.py'],
