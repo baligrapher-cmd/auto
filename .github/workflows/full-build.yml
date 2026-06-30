@@ -23,14 +23,15 @@ jobs:
         pip install -r requirements.txt
         pip install pyinstaller pillow playwright
     
-    - name: Run Smoke Test (Windows)
-      run: |
-        python smoke_test.py
-    
-    - name: Install Playwright Browsers (Internal)
+    - name: Install Playwright Browsers (for smoke test)
       run: |
         $env:PLAYWRIGHT_BROWSERS_PATH = "$PWD\pw-browsers"
         python -m playwright install chromium ffmpeg
+    
+    - name: Run Smoke Test (Windows)
+      run: |
+        $env:PLAYWRIGHT_BROWSERS_PATH = "$PWD\pw-browsers"
+        python smoke_test.py
     
     - name: Build Main Version (AutoYu Pro)
       run: |
@@ -115,6 +116,13 @@ jobs:
           python -m pip install -r requirements.txt
           python -m pip install pyinstaller playwright
 
+      - name: Install Playwright Browsers (Intel - for smoke test)
+        if: steps.cache-playwright-intel.outputs.cache-hit != 'true'
+        run: |
+          source $CONDA/etc/profile.d/conda.sh
+          conda activate autoyu
+          python -m playwright install chromium ffmpeg
+
       - name: Run Smoke Test (macOS Intel)
         run: |
           source $CONDA/etc/profile.d/conda.sh
@@ -147,13 +155,6 @@ jobs:
           sips -z 1024 1024 icon.png --out icon.iconset/icon_512x512@2x.png
           iconutil -c icns icon.iconset
           cp icon.icns assets/icon.icns || cp icon.icns icon.icns
-
-      - name: Install Playwright Browsers (Intel)
-        if: steps.cache-playwright-intel.outputs.cache-hit != 'true'
-        run: |
-          source $CONDA/etc/profile.d/conda.sh
-          conda activate autoyu
-          python -m playwright install chromium ffmpeg
 
       - name: Build Main Version (AutoYu Pro Intel)
         run: |
@@ -251,6 +252,13 @@ jobs:
           python -m pip install -r requirements.txt
           python -m pip install pyinstaller playwright
 
+      - name: Install Playwright Browsers (Apple Silicon - for smoke test)
+        if: steps.cache-playwright-arm64.outputs.cache-hit != 'true'
+        run: |
+          source $CONDA/etc/profile.d/conda.sh
+          conda activate autoyu
+          python -m playwright install chromium ffmpeg
+
       - name: Run Smoke Test (macOS Apple Silicon)
         run: |
           source $CONDA/etc/profile.d/conda.sh
@@ -283,13 +291,6 @@ jobs:
           sips -z 1024 1024 icon.png --out icon.iconset/icon_512x512@2x.png
           iconutil -c icns icon.iconset
           cp icon.icns assets/icon.icns || cp icon.icns icon.icns
-
-      - name: Install Playwright Browsers (Apple Silicon)
-        if: steps.cache-playwright-arm64.outputs.cache-hit != 'true'
-        run: |
-          source $CONDA/etc/profile.d/conda.sh
-          conda activate autoyu
-          python -m playwright install chromium ffmpeg
 
       - name: Build Main Version (AutoYu Pro Apple Silicon)
         run: |

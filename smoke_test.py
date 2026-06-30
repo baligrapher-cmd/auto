@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 SMOKE TEST: Memastikan aplikasi SELALU menggunakan Chromium Internal/Bundled,
-tidak fallback ke Chrome pengguna.
+tidak fallback ke Chrome pengguna, dan browser bisa diluncurkan.
 """
 
 import sys
@@ -101,15 +101,37 @@ def test_macos_search_patterns():
     
     return found_all
 
+def test_playwright_chromium_can_launch():
+    """Test: Playwright Chromium bisa diluncurkan (headless)"""
+    print("\nTest 4: Cek Playwright Chromium bisa diluncurkan (headless)")
+    try:
+        from playwright.sync_api import sync_playwright
+        with sync_playwright() as p:
+            # Launch Chromium default, headless karena GitHub Actions tidak punya GUI
+            browser = p.chromium.launch(headless=True)
+            page = browser.new_page()
+            page.goto("https://example.com")
+            title = page.title()
+            print(f"  Page loaded successfully! Title: {title}")
+            browser.close()
+        print("  ✅ PASS: Chromium bisa diluncurkan dan berjalan normal!")
+        return True
+    except Exception as e:
+        print(f"  ❌ FAIL: Could not launch Chromium: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
+
 if __name__ == "__main__":
     print("="*60)
-    print("  AUTOYU SMOKE TEST: BROWSER CONFIGURATION")
+    print("  AUTOYU SMOKE TEST: BROWSER CONFIGURATION & LAUNCH")
     print("="*60)
     
     tests = [
         ("No user Chrome fallback", test_no_user_chrome_fallback),
         ("PLAYWRIGHT_BROWSERS_PATH config", test_playwright_browser_path_config),
         ("macOS search patterns include x64/arm64", test_macos_search_patterns),
+        ("Playwright Chromium can launch (headless)", test_playwright_chromium_can_launch),
     ]
     
     results = []
@@ -134,7 +156,7 @@ if __name__ == "__main__":
             all_passed = False
     
     if all_passed:
-        print("\n🎉 SEMUA TEST BERHASIL! Aplikasi akan menggunakan Chromium internal.")
+        print("\n🎉 SEMUA TEST BERHASIL! Aplikasi siap, dan Chromium bisa diluncurkan!")
         sys.exit(0)
     else:
         print("\n⚠️ ADA TEST YANG GAGAL! Mohon periksa konfigurasi.")

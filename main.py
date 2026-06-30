@@ -64,6 +64,11 @@ def main():
         if "--smoke-test" in sys.argv:
             os.environ["AUTOYU_SMOKE_TEST"] = "1"
             print("Running smoke test...")
+            
+            # Set Qt platform to offscreen for headless environments (GitHub Actions)
+            if os.environ.get("CI") or os.environ.get("GITHUB_ACTIONS"):
+                os.environ["QT_QPA_PLATFORM"] = "offscreen"
+            
             from gui.main_window import MainWindow
             from core.playwright_runtime import configure_playwright_browser_path
 
@@ -83,9 +88,9 @@ def main():
             window = MainWindow()
             if os.path.exists(icon_path):
                 window.setWindowIcon(QIcon(icon_path))
-            window.show()
+            # Don't show() window in headless, just create it
             app.processEvents()
-            print("✓ Main window opened")
+            print("✓ Main window created successfully")
 
             # Keep the event loop alive briefly to verify that the UI can start.
             QTimer.singleShot(500, app.quit)
