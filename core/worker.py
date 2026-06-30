@@ -319,9 +319,12 @@ class AutomationWorker(QThread):
                         browser_launched = True
                         break
                     except Exception as e:
-                        err_msg = str(e).split("\n")[0]
-                        print(f"[Worker] {browser_name} failed: {e}")
-                        self.log_signal.emit(f"⚠️ {browser_name} gagal: {err_msg[:60]}...")
+                        import traceback
+                        full_traceback = traceback.format_exc()
+                        print(f"[Worker] {browser_name} failed with full traceback:")
+                        print(full_traceback)
+                        err_msg = str(e)
+                        self.log_signal.emit(f"⚠️ {browser_name} gagal: {err_msg[:80]}...")
                 
                 if not browser_launched:
                     self.log_signal.emit("❌ CRITICAL ERROR: Tidak dapat menemukan browser apapun!")

@@ -20,11 +20,20 @@ if sys.platform == 'darwin' and not target_arch:
 # Collect Playwright's data files (driver, etc.)
 playwright_datas = collect_data_files('playwright')
 
+# Collect browsers folder if available (for CI builds)
+datas_list = [('PANDUAN_USER.txt', '.'), ('icon.ico', '.')] + playwright_datas
+if os.path.exists('browsers'):
+    print(f"[SPEC] Adding browsers folder to bundle...")
+    datas_list.append(('browsers', 'browsers'))
+if os.path.exists('pw-browsers'):
+    print(f"[SPEC] Adding pw-browsers folder to bundle...")
+    datas_list.append(('pw-browsers', 'browsers'))
+
 a = Analysis(
     ['main.py'],
     pathex=[],
     binaries=[],
-    datas=[('PANDUAN_USER.txt', '.'), ('icon.ico', '.')] + playwright_datas,
+    datas=datas_list,
     hiddenimports=[
         'encodings',
         'encodings.utf_8',
