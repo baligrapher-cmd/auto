@@ -111,19 +111,12 @@ def get_playwright_browser_candidates():
 
 
 def configure_playwright_browser_path():
-    print(f"[PlaywrightRuntime] Checking for internal browsers...", flush=True)
     candidates = get_playwright_browser_candidates()
     for candidate in candidates:
-        is_valid = _looks_like_playwright_browser_root(candidate)
-        status = "✅ VALID" if is_valid else "❌ NOT FOUND"
-        print(f"[PlaywrightRuntime] Candidate: {candidate} -> {status}", flush=True)
-        
-        if is_valid:
+        if _looks_like_playwright_browser_root(candidate):
             os.environ["PLAYWRIGHT_BROWSERS_PATH"] = candidate
-            print(f"[PlaywrightRuntime] Final internal browser path set to: {candidate}", flush=True)
             return candidate
-            
-    print("[PlaywrightRuntime] No internal browser path found, falling back to system default.", flush=True)
+        
     return None
 
 
@@ -159,16 +152,11 @@ def resolve_internal_chromium_executable(browser_root):
             os.path.join(browser_root, "chrome-*", "chrome-linux", "chrome"),
         ]
 
-    # Debugging: Tampilkan semua pola dan kandidat yang ditemukan
-    print(f"[PlaywrightRuntime] Looking for Chromium in: {browser_root}")
     for pattern in patterns:
         matches = glob.glob(pattern)
-        print(f"[PlaywrightRuntime] Pattern: {pattern} → Matches: {matches}")
         for match in sorted(matches):
             if os.path.isfile(match):
-                print(f"[PlaywrightRuntime] Found valid Chromium executable: {match}")
                 return os.path.abspath(match)
-    print(f"[PlaywrightRuntime] No valid Chromium executable found in {browser_root}")
     return None
 
 
