@@ -23,6 +23,10 @@ jobs:
         pip install -r requirements.txt
         pip install pyinstaller pillow playwright
     
+    - name: Run Smoke Test (Windows)
+      run: |
+        python smoke_test.py
+    
     - name: Install Playwright Browsers (Internal)
       run: |
         $env:PLAYWRIGHT_BROWSERS_PATH = "$PWD\pw-browsers"
@@ -110,6 +114,12 @@ jobs:
           python -m pip install --upgrade pip setuptools wheel
           python -m pip install -r requirements.txt
           python -m pip install pyinstaller playwright
+
+      - name: Run Smoke Test (macOS Intel)
+        run: |
+          source $CONDA/etc/profile.d/conda.sh
+          conda activate autoyu
+          arch -x86_64 python smoke_test.py
 
       - name: Inspect Cryptography Linkage (Intel)
         run: |
@@ -240,6 +250,12 @@ jobs:
           python -m pip install --upgrade pip setuptools wheel
           python -m pip install -r requirements.txt
           python -m pip install pyinstaller playwright
+
+      - name: Run Smoke Test (macOS Apple Silicon)
+        run: |
+          source $CONDA/etc/profile.d/conda.sh
+          conda activate autoyu
+          python smoke_test.py
 
       - name: Inspect Cryptography Linkage (Apple Silicon)
         run: |
