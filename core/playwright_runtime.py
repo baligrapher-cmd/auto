@@ -26,9 +26,11 @@ def _looks_like_playwright_browser_root(path):
     except OSError:
         return False
 
+    # Check for registry.json (official Playwright structure)
     if "registry.json" in entries:
         return True
 
+    # Check if any entry is a directory starting with browser prefixes
     browser_prefixes = (
         "chromium-",
         "chromium_headless_shell-",
@@ -38,7 +40,13 @@ def _looks_like_playwright_browser_root(path):
         "webkit-",
         "ffmpeg-",
     )
-    return any(entry.startswith(browser_prefixes) for entry in entries)
+    
+    for entry in entries:
+        entry_path = os.path.join(path, entry)
+        if os.path.isdir(entry_path) and any(entry.startswith(prefix) for prefix in browser_prefixes):
+            return True
+    
+    return False
 
 
 def get_playwright_browser_candidates():
