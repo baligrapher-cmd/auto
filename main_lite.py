@@ -7,6 +7,7 @@ import traceback
 import platform
 from datetime import datetime
 from PySide6.QtWidgets import QApplication
+from PySide6.QtCore import Qt
 from PySide6.QtGui import QIcon
 from gui.lite_window import LiteWindow
 from core.worker import AutomationWorker
@@ -17,8 +18,14 @@ if __name__ == "__main__":
     multiprocessing.freeze_support()
 
 
+# === SET ALL QT ENVIRONMENT VARIABLES BEFORE ANY QApplication IS CREATED ===
 if sys.platform == "darwin":
     os.environ["QT_MAC_WANTS_LAYER"] = "1"
+
+# High DPI / UI Scaling Settings (CRITICAL for proper display)
+os.environ["QT_AUTO_SCREEN_SCALE_FACTOR"] = "1"
+os.environ["QT_ENABLE_HIGHDPI_SCALING"] = "1"
+os.environ["QT_SCALE_FACTOR_ROUNDING_POLICY"] = "RoundPreferFloor"
 
 
 def get_app_log_dir():
@@ -85,6 +92,10 @@ def main():
         configure_playwright_browser_path()
 
         app = QApplication(sys.argv)
+        
+        # Apply high DPI attributes
+        app.setAttribute(Qt.AA_EnableHighDpiScaling, True)
+        app.setAttribute(Qt.AA_UseHighDpiPixmaps, True)
         
         # Load Icon
         icon_path = get_resource_path("icon.ico")
