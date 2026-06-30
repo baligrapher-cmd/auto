@@ -286,14 +286,18 @@ class AutomationWorker(QThread):
                 }
                 print(f"[Worker] Launch args: {launch_args}")
 
-                # PRIORITAS: Coba semua opsi browser secara berurutan
+                # PRIORITAS: SELALU gunakan Chromium bawaan (bundled), tidak fallback ke Chrome pengguna!
                 browser_launched = False
-                launch_attempts = [
-                    ("Internal Chromium", {"executable_path": find_executable()}),
-                    ("Playwright Default Chromium", {}),
-                    ("Google Chrome", {"channel": "chrome"}),
-                    ("Microsoft Edge", {"channel": "msedge"}),
-                ]
+                # Pertama coba configure_playwright_browser_path untuk set PLAYWRIGHT_BROWSERS_PATH
+                internal_browser_path = configure_playwright_browser_path()
+                if internal_browser_path:
+                    launch_attempts = [
+                        ("Internal Chromium (PLAYWRIGHT_BROWSERS_PATH)", {}),
+                    ]
+                else:
+                    launch_attempts = [
+                        ("Playwright Default Chromium", {}),
+                    ]
                 
                 for browser_name, extra_args in launch_attempts:
                     # Skip if the required argument isn't available

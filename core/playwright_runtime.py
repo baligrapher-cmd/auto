@@ -111,25 +111,20 @@ def resolve_internal_chromium_executable(browser_root):
             os.path.join(browser_root, "chromium_headless_shell-*", "chrome-headless-shell-win*", "chrome-headless-shell.exe"),
         ]
     elif sys.platform == "darwin":
+        # Tambahkan lebih banyak pola untuk mendukung berbagai struktur folder dan arsitektur
         patterns = [
-            os.path.join(
-                browser_root,
-                "chromium-*",
-                "chrome-mac",
-                "Chromium.app",
-                "Contents",
-                "MacOS",
-                "Chromium",
-            ),
-            os.path.join(
-                browser_root,
-                "chromium-*",
-                "chrome-mac",
-                "Google Chrome for Testing.app",
-                "Contents",
-                "MacOS",
-                "Google Chrome for Testing",
-            ),
+            # Pola dengan arsitektur (contoh: chrome-mac-arm64 atau chrome-mac-x64)
+            os.path.join(browser_root, "chromium-*", "chrome-mac-*", "Chromium.app", "Contents", "MacOS", "Chromium"),
+            os.path.join(browser_root, "chromium-*", "chrome-mac-*", "Google Chrome for Testing.app", "Contents", "MacOS", "Google Chrome for Testing"),
+            os.path.join(browser_root, "chromium-*", "chrome-mac-*", "Google Chrome.app", "Contents", "MacOS", "Google Chrome"),
+            # Pola dasar tanpa suffix arsitektur
+            os.path.join(browser_root, "chromium-*", "chrome-mac", "Chromium.app", "Contents", "MacOS", "Chromium"),
+            os.path.join(browser_root, "chromium-*", "chrome-mac", "Google Chrome for Testing.app", "Contents", "MacOS", "Google Chrome for Testing"),
+            os.path.join(browser_root, "chromium-*", "chrome-mac", "Google Chrome.app", "Contents", "MacOS", "Google Chrome"),
+            # Pola tanpa "chrome-mac" di tengah
+            os.path.join(browser_root, "chromium-*", "Chromium.app", "Contents", "MacOS", "Chromium"),
+            os.path.join(browser_root, "chromium-*", "Google Chrome for Testing.app", "Contents", "MacOS", "Google Chrome for Testing"),
+            os.path.join(browser_root, "chromium-*", "Google Chrome.app", "Contents", "MacOS", "Google Chrome"),
         ]
     else:
         patterns = [
@@ -137,10 +132,16 @@ def resolve_internal_chromium_executable(browser_root):
             os.path.join(browser_root, "chrome-*", "chrome-linux", "chrome"),
         ]
 
+    # Debugging: Tampilkan semua pola dan kandidat yang ditemukan
+    print(f"[PlaywrightRuntime] Looking for Chromium in: {browser_root}")
     for pattern in patterns:
-        for match in sorted(glob.glob(pattern)):
+        matches = glob.glob(pattern)
+        print(f"[PlaywrightRuntime] Pattern: {pattern} → Matches: {matches}")
+        for match in sorted(matches):
             if os.path.isfile(match):
+                print(f"[PlaywrightRuntime] Found valid Chromium executable: {match}")
                 return os.path.abspath(match)
+    print(f"[PlaywrightRuntime] No valid Chromium executable found in {browser_root}")
     return None
 
 
