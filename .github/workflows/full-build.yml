@@ -75,6 +75,8 @@ jobs:
         export _PYTHON_HOST_PLATFORM="macosx-11.0-x86_64"
         arch -x86_64 python -m pip install --upgrade pip
         arch -x86_64 python -m pip install -r requirements.txt pyinstaller pillow
+        # Force reinstall cryptography for x86_64
+        arch -x86_64 python -m pip install --force-reinstall cryptography
     
     - name: Install Playwright Browsers (x64)
       run: |
