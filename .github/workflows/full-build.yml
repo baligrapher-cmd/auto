@@ -161,37 +161,61 @@ jobs:
           
           # Copy entire contents of pw-browsers to bundle
           if [ -d "pw-browsers" ]; then
+            echo "=== Copying browsers to bundle ==="
             mkdir -p dist/AutoYuPro.app/Contents/Resources/browsers
             cp -R pw-browsers/* dist/AutoYuPro.app/Contents/Resources/browsers/
             
-            find dist/AutoYuPro.app/Contents/Resources/browsers -name "translations" -type d -exec rm -rf {} +
+            # Verify copy was successful
+            echo "=== Verifying browsers folder in bundle ==="
+            ls -la dist/AutoYuPro.app/Contents/Resources/browsers/
+            echo "=== Checking registry.json ==="
+            cat dist/AutoYuPro.app/Contents/Resources/browsers/registry.json || true
+            
+            # Cleanup unnecessary files (more carefully)
+            echo "=== Cleaning up unnecessary files ==="
+            # Jangan hapus translations karena dibutuhkan
+            # find dist/AutoYuPro.app/Contents/Resources/browsers -name "translations" -type d -exec rm -rf {} +
             find dist/AutoYuPro.app/Contents/Resources/browsers -name "*.zip" -delete
             find dist/AutoYuPro.app/Contents/Resources/browsers -name "*.gz" -delete
-            find dist/AutoYuPro.app/Contents/Resources/browsers -name "*.dSYM" -type d -exec rm -rf {} +
-            find dist/AutoYuPro.app/Contents/Resources/browsers -name "obj" -type d -exec rm -rf {} +
-            find dist/AutoYuPro.app/Contents/Resources/browsers -name "gen" -type d -exec rm -rf {} +
+            find dist/AutoYuPro.app/Contents/Resources/browsers -name "*.dSYM" -type d -exec rm -rf {} + 2>/dev/null || true
+            find dist/AutoYuPro.app/Contents/Resources/browsers -name "obj" -type d -exec rm -rf {} + 2>/dev/null || true
+            find dist/AutoYuPro.app/Contents/Resources/browsers -name "gen" -type d -exec rm -rf {} + 2>/dev/null || true
             
             # Clean extended attributes and fix permissions before codesign
-            echo "Fixing permissions and extended attributes..."
+            echo "=== Fixing permissions and extended attributes ==="
             xattr -cr dist/AutoYuPro.app/Contents/Resources/browsers || true
             chmod -R 755 dist/AutoYuPro.app/Contents/Resources/browsers || true
             
-            # Codesign Chromium bundles first if they exist
-            echo "Codesigning internal browser components..."
-            for chromium_app in dist/AutoYuPro.app/Contents/Resources/browsers/chromium-*/chrome-mac*/Chromium*.app; do
+            # Codesign Chromium bundles first - cari semua .app di dalam browsers
+            echo "=== Codesigning internal browser components ==="
+            for chromium_app in dist/AutoYuPro.app/Contents/Resources/browsers/chromium-*/*/*.app; do
               if [ -d "$chromium_app" ]; then
                 echo "Codesigning: $chromium_app"
                 codesign --force --deep --sign - "$chromium_app" || true
               fi
             done
+            for chromium_app in dist/AutoYuPro.app/Contents/Resources/browsers/chromium-*/*.app; do
+              if [ -d "$chromium_app" ]; then
+                echo "Codesigning: $chromium_app"
+                codesign --force --deep --sign - "$chromium_app" || true
+              fi
+            done
+          else
+            echo "=== ERROR: pw-browsers folder not found! ==="
+            ls -la
           fi
+          
           # Ad-hoc codesign to avoid "App is damaged" error
+          echo "=== Codesigning main app ==="
           codesign --force --deep --sign - dist/AutoYuPro.app
           # Verify codesign
           codesign -vvv dist/AutoYuPro.app
           # Verify architecture
-          echo "Checking app architecture:"
+          echo "=== Checking app architecture ==="
           file dist/AutoYuPro.app/Contents/MacOS/AutoYuPro
+          # Verify bundle size
+          echo "=== Checking bundle size ==="
+          du -sh dist/AutoYuPro.app
 
       - name: Verify bundled Chromium (Intel)
         run: |
@@ -341,37 +365,61 @@ jobs:
           
           # Copy entire contents of pw-browsers to bundle
           if [ -d "pw-browsers" ]; then
+            echo "=== Copying browsers to bundle ==="
             mkdir -p dist/AutoYuPro.app/Contents/Resources/browsers
             cp -R pw-browsers/* dist/AutoYuPro.app/Contents/Resources/browsers/
             
-            find dist/AutoYuPro.app/Contents/Resources/browsers -name "translations" -type d -exec rm -rf {} +
+            # Verify copy was successful
+            echo "=== Verifying browsers folder in bundle ==="
+            ls -la dist/AutoYuPro.app/Contents/Resources/browsers/
+            echo "=== Checking registry.json ==="
+            cat dist/AutoYuPro.app/Contents/Resources/browsers/registry.json || true
+            
+            # Cleanup unnecessary files (more carefully)
+            echo "=== Cleaning up unnecessary files ==="
+            # Jangan hapus translations karena dibutuhkan
+            # find dist/AutoYuPro.app/Contents/Resources/browsers -name "translations" -type d -exec rm -rf {} +
             find dist/AutoYuPro.app/Contents/Resources/browsers -name "*.zip" -delete
             find dist/AutoYuPro.app/Contents/Resources/browsers -name "*.gz" -delete
-            find dist/AutoYuPro.app/Contents/Resources/browsers -name "*.dSYM" -type d -exec rm -rf {} +
-            find dist/AutoYuPro.app/Contents/Resources/browsers -name "obj" -type d -exec rm -rf {} +
-            find dist/AutoYuPro.app/Contents/Resources/browsers -name "gen" -type d -exec rm -rf {} +
+            find dist/AutoYuPro.app/Contents/Resources/browsers -name "*.dSYM" -type d -exec rm -rf {} + 2>/dev/null || true
+            find dist/AutoYuPro.app/Contents/Resources/browsers -name "obj" -type d -exec rm -rf {} + 2>/dev/null || true
+            find dist/AutoYuPro.app/Contents/Resources/browsers -name "gen" -type d -exec rm -rf {} + 2>/dev/null || true
             
             # Clean extended attributes and fix permissions before codesign
-            echo "Fixing permissions and extended attributes..."
+            echo "=== Fixing permissions and extended attributes ==="
             xattr -cr dist/AutoYuPro.app/Contents/Resources/browsers || true
             chmod -R 755 dist/AutoYuPro.app/Contents/Resources/browsers || true
             
-            # Codesign Chromium bundles first if they exist
-            echo "Codesigning internal browser components..."
-            for chromium_app in dist/AutoYuPro.app/Contents/Resources/browsers/chromium-*/chrome-mac*/Chromium*.app; do
+            # Codesign Chromium bundles first - cari semua .app di dalam browsers
+            echo "=== Codesigning internal browser components ==="
+            for chromium_app in dist/AutoYuPro.app/Contents/Resources/browsers/chromium-*/*/*.app; do
               if [ -d "$chromium_app" ]; then
                 echo "Codesigning: $chromium_app"
                 codesign --force --deep --sign - "$chromium_app" || true
               fi
             done
+            for chromium_app in dist/AutoYuPro.app/Contents/Resources/browsers/chromium-*/*.app; do
+              if [ -d "$chromium_app" ]; then
+                echo "Codesigning: $chromium_app"
+                codesign --force --deep --sign - "$chromium_app" || true
+              fi
+            done
+          else
+            echo "=== ERROR: pw-browsers folder not found! ==="
+            ls -la
           fi
+          
           # Ad-hoc codesign to avoid "App is damaged" error
+          echo "=== Codesigning main app ==="
           codesign --force --deep --sign - dist/AutoYuPro.app
           # Verify codesign
           codesign -vvv dist/AutoYuPro.app
           # Verify architecture
-          echo "Checking app architecture:"
+          echo "=== Checking app architecture ==="
           file dist/AutoYuPro.app/Contents/MacOS/AutoYuPro
+          # Verify bundle size
+          echo "=== Checking bundle size ==="
+          du -sh dist/AutoYuPro.app
 
       - name: Verify bundled Chromium (Apple Silicon)
         run: |

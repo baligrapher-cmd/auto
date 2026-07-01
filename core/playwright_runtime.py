@@ -141,6 +141,22 @@ def resolve_internal_chromium_executable(browser_root):
 
     print(f"[DEBUG] resolve_internal_chromium_executable: looking in {browser_root}")
 
+    # Debug: Print semua subdirektori di browser_root untuk melihat struktur
+    try:
+        print(f"[DEBUG] Browser root contents: {os.listdir(browser_root)}")
+        # Print isi setiap direktori chromium-*
+        for item in os.listdir(browser_root):
+            item_path = os.path.join(browser_root, item)
+            if os.path.isdir(item_path) and item.startswith("chromium-"):
+                print(f"[DEBUG] Content of {item}: {os.listdir(item_path)}")
+                # Cek satu level lebih dalam
+                for subitem in os.listdir(item_path):
+                    subitem_path = os.path.join(item_path, subitem)
+                    if os.path.isdir(subitem_path):
+                        print(f"[DEBUG] Content of {item}/{subitem}: {os.listdir(subitem_path)[:10]}")
+    except Exception as e:
+        print(f"[DEBUG] Error listing browser root: {e}")
+
     if sys.platform.startswith("win"):
         patterns = [
             os.path.join(browser_root, "chromium-*", "chrome-win*", "chrome.exe"),
@@ -162,11 +178,14 @@ def resolve_internal_chromium_executable(browser_root):
             os.path.join(browser_root, "chromium-*", "Chromium.app", "Contents", "MacOS", "Chromium"),
             os.path.join(browser_root, "chromium-*", "Google Chrome for Testing.app", "Contents", "MacOS", "Google Chrome for Testing"),
             os.path.join(browser_root, "chromium-*", "Google Chrome.app", "Contents", "MacOS", "Google Chrome"),
+            # Pola pencarian lebih agresif - cari semua .app di dalam chromium-*
+            os.path.join(browser_root, "chromium-*", "*.app", "Contents", "MacOS", "*"),
         ]
     else:
         patterns = [
             os.path.join(browser_root, "chromium-*", "chrome-linux", "chrome"),
             os.path.join(browser_root, "chrome-*", "chrome-linux", "chrome"),
+            os.path.join(browser_root, "chromium-*", "*", "chrome"),
         ]
 
     collected = []
@@ -174,28 +193,50 @@ def resolve_internal_chromium_executable(browser_root):
         matches = glob.glob(pattern)
         print(f"[DEBUG] Pattern {pattern} found {len(matches)} matches")
         for match in matches:
-            if os.path.isfile(match):
+            if os.path.isfile(match) and os.access(match, os.X_OK):
+                print(f"[DEBUG] Valid executable found: {match}")
                 collected.append(os.path.abspath(match))
 
     if not collected:
+        print(f"[DEBUG] No executable found! Last resort: recursive search for any executable in browser_root")
+        # Last resort: cari semua file executable di browser_root secara rekursif
+        for root, dirs, files in os.walk(browser_root):
+            for file in files:
+                file_path = os.path.join(root, file)
+                if os.path.isfile(file_path) and os.access(file_path, os.X_OK):
+                    # Cek nama file untuk memastikan itu Chromium
+                    filename = file.lower()
+                    if "chromium" in filename or "chrome" in filename and not filename.endswith((".dll", ".dylib", ".so")):
+                        print(f"[DEBUG] Found possible executable via recursive search: {file_path}")
+                        collected.append(os.path.abspath(file_path))
+
+    if not collected:
+        print(f"[DEBUG] Still no executable found!")
         return None
 
     if sys.platform == "darwin":
         current_arch = platform.machine().lower()
+        print(f"[DEBUG] Current architecture: {current_arch}")
 
         def _score(path):
             p = path.lower()
             score = 0
             if current_arch in ("arm64", "aarch64"):
                 if "arm64" in p:
-                    score += 10
+                    score += 20
                 if "x64" in p or "x86_64" in p:
-                    score -= 10
+                    score -= 20
+                # Prioritaskan nama Chromium
+                if "chromium" in p:
+                    score += 10
             elif current_arch in ("x86_64", "i386"):
                 if "x64" in p or "x86_64" in p:
-                    score += 10
+                    score += 20
                 if "arm64" in p or "aarch64" in p:
-                    score -= 10
+                    score -= 20
+                # Prioritaskan nama Chromium
+                if "chromium" in p:
+                    score += 10
             return (-score, p)
 
         collected = sorted(set(collected), key=_score)
@@ -208,14 +249,72 @@ def resolve_internal_chromium_executable(browser_root):
     return chosen
 
 
+def get_executable_arch(executable_path):
+    """Mendapatkan arsitektur executable secara actual dengan perintah file (macOS/Linux) atau Windows API."""
+    import subprocess
+    import platform
+    try:
+        if sys.platform == "darwin":
+            # Gunakan perintah file di macOS
+            result = subprocess.run(["file", executable_path], capture_output=True, text=True, check=False)
+            output = result.stdout.lower()
+            if "arm64" in output or "aarch64" in output:
+                return "arm64"
+            elif "x86_64" in output or "x64" in output:
+                return "x86_64"
+            elif "i386" in output:
+                return "i386"
+        elif sys.platform.startswith("win"):
+            # Di Windows, kita bisa cek dengan sederhana atau return None
+            return None
+        elif sys.platform.startswith("linux"):
+            result = subprocess.run(["file", executable_path], capture_output=True, text=True, check=False)
+            output = result.stdout.lower()
+            if "arm64" in output or "aarch64" in output:
+                return "arm64"
+            elif "x86_64" in output or "x64" in output:
+                return "x86_64"
+    except Exception as e:
+        print(f"[DEBUG] Error checking executable arch: {e}")
+    return None
+
 def find_executable():
     """Mencari executable chromium di semua kandidat path browser."""
+    import platform
+    current_arch = platform.machine().lower()
+    if current_arch == "amd64":
+        current_arch = "x86_64"
+    
     candidates = get_playwright_browser_candidates()
     print(f"[DEBUG] find_executable() - candidates: {candidates}")
+    print(f"[DEBUG] find_executable() - current system arch: {current_arch}")
+    
+    best_match = None
+    fallback_match = None
+    
     for candidate in candidates:
         exe = resolve_internal_chromium_executable(candidate)
         if exe:
-            print(f"[DEBUG] find_executable() - found: {exe}")
-            return exe
+            print(f"[DEBUG] find_executable() - checking: {exe}")
+            
+            # Cek arsitektur executable secara actual
+            exe_arch = get_executable_arch(exe)
+            print(f"[DEBUG] find_executable() - executable arch: {exe_arch}")
+            
+            if exe_arch == current_arch:
+                print(f"[DEBUG] find_executable() - perfect match found!")
+                best_match = exe
+                break  # langsung gunakan yang perfect
+            
+            # Fallback: jika tidak perfect, simpan sebagai fallback
+            if not fallback_match:
+                fallback_match = exe
+    
+    if best_match:
+        return best_match
+    if fallback_match:
+        print(f"[DEBUG] find_executable() - using fallback (arch might not match perfectly): {fallback_match}")
+        return fallback_match
+    
     print(f"[DEBUG] find_executable() - NO executable found!")
     return None

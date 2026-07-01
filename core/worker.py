@@ -292,28 +292,26 @@ class AutomationWorker(QThread):
                 internal_browser_path = configure_playwright_browser_path()
                 internal_executable = find_executable()
                 print(f"[Worker] internal_executable found: {internal_executable}")
-                if sys.platform == "darwin" and internal_executable:
-                    import platform
-                    machine = platform.machine().lower()
-                    exe_lower = internal_executable.lower()
-                    if machine in ("x86_64", "i386") and ("arm64" in exe_lower or "aarch64" in exe_lower):
-                        self.log_signal.emit("❌ Browser bawaan tidak cocok untuk Mac Intel (terdeteksi ARM). Download build AutoYuPro-macOS-Intel.")
-                        internal_executable = None
-                    elif machine in ("arm64", "aarch64") and ("x64" in exe_lower or "x86_64" in exe_lower):
-                        self.log_signal.emit("❌ Browser bawaan tidak cocok untuk Apple Silicon (terdeteksi Intel). Download build AutoYuPro-macOS-AppleSilicon.")
-                        internal_executable = None
+                
+                # Buat list launch attempts dengan fallback strategy
+                launch_attempts = []
+                
+                # Attempt 1: Dengan explicit executable_path
                 if internal_browser_path and internal_executable:
-                    launch_attempts = [
-                        ("Internal Chromium (PLAYWRIGHT_BROWSERS_PATH + explicit executable)", {"executable_path": internal_executable}),
-                    ]
-                elif internal_browser_path:
-                    launch_attempts = [
-                        ("Internal Chromium (PLAYWRIGHT_BROWSERS_PATH)", {}),
-                    ]
-                else:
-                    launch_attempts = [
-                        ("Playwright Default Chromium", {}),
-                    ]
+                    launch_attempts.append(
+                        ("Internal Chromium (PLAYWRIGHT_BROWSERS_PATH + explicit executable)", {"executable_path": internal_executable})
+                    )
+                
+                # Attempt 2: Hanya dengan PLAYWRIGHT_BROWSERS_PATH (tanpa executable_path)
+                if internal_browser_path:
+                    launch_attempts.append(
+                        ("Internal Chromium (PLAYWRIGHT_BROWSERS_PATH only)", {})
+                    )
+                
+                # Attempt 3: Coba cari Chrome/Edge sistem sebagai fallback terakhir
+                launch_attempts.append(
+                    ("System Chrome/Edge (fallback)", {})
+                )
                 
                 for browser_name, extra_args in launch_attempts:
                     # Skip if the required argument isn't available
