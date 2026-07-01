@@ -56,60 +56,60 @@ jobs:
         name: AutoYuPro-Windows
         path: AutoYuPro-Windows.zip
 
-  # --- MAC INTEL BUILD ---
-  build-mac-intel:
-    runs-on: macos-14
-    steps:
-    - uses: actions/checkout@v4
-    - name: Set up Python (x64)
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.11'
-        architecture: 'x64'
-    
-    - name: Install Dependencies (x64)
-      run: |
-        arch -x86_64 python -m venv venv
-        source venv/bin/activate
-        export ARCHFLAGS="-arch x86_64"
-        export _PYTHON_HOST_PLATFORM="macosx-11.0-x86_64"
-        arch -x86_64 python -m pip install --upgrade pip
-        arch -x86_64 python -m pip install -r requirements.txt pyinstaller pillow
-        # Force reinstall cryptography for x86_64
-        arch -x86_64 python -m pip install --force-reinstall cryptography
-    
-    - name: Install Playwright Browsers (x64)
-      run: |
-        source venv/bin/activate
-        export PLAYWRIGHT_BROWSERS_PATH=$PWD/pw-browsers
-        arch -x86_64 python -m playwright install chromium ffmpeg
-    
-    - name: Build with PyInstaller (x64)
-      run: |
-        source venv/bin/activate
-        python generate_icns.py || echo "ICNS generation failed"
-        arch -x86_64 pyinstaller --clean --noconfirm --distpath dist AutoYuPro.spec
-    
-    - name: Bundle Browser (Mac Intel)
-      run: |
-        APP_PATH="dist/AutoYuPro.app"
-        mkdir -p "$APP_PATH/Contents/Resources/browsers"
-        cp -R pw-browsers/* "$APP_PATH/Contents/Resources/browsers/"
-        find "$APP_PATH/Contents/Resources/browsers" -name "*.zip" -delete
-        find "$APP_PATH/Contents/Resources/browsers" -name "*.gz" -delete
-        codesign --force --deep --sign - "$APP_PATH"
-    
-    - name: Create Release Package
-      run: |
-        cd dist
-        cp ../PANDUAN_USER.txt .
-        zip -r9y ../AutoYuPro-macOS-Intel.zip AutoYuPro.app PANDUAN_USER.txt
-    
-    - name: Upload Artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: AutoYuPro-macOS-Intel
-        path: AutoYuPro-macOS-Intel.zip
+  # --- MAC INTEL BUILD (DISABLED TEMPORARILY) ---
+  # build-mac-intel:
+  #   runs-on: macos-14
+  #   steps:
+  #   - uses: actions/checkout@v4
+  #   - name: Set up Python (x64)
+  #     uses: actions/setup-python@v5
+  #     with:
+  #       python-version: '3.11'
+  #       architecture: 'x64'
+  #   
+  #   - name: Install Dependencies (x64)
+  #     run: |
+  #       arch -x86_64 python -m venv venv
+  #       source venv/bin/activate
+  #       export ARCHFLAGS="-arch x86_64"
+  #       export _PYTHON_HOST_PLATFORM="macosx-11.0-x86_64"
+  #       arch -x86_64 python -m pip install --upgrade pip
+  #       arch -x86_64 python -m pip install -r requirements.txt pyinstaller pillow
+  #       # Force reinstall cryptography for x86_64
+  #       arch -x86_64 python -m pip install --force-reinstall cryptography
+  #   
+  #   - name: Install Playwright Browsers (x64)
+  #     run: |
+  #       source venv/bin/activate
+  #       export PLAYWRIGHT_BROWSERS_PATH=$PWD/pw-browsers
+  #       arch -x86_64 python -m playwright install chromium ffmpeg
+  #   
+  #   - name: Build with PyInstaller (x64)
+  #     run: |
+  #       source venv/bin/activate
+  #       python generate_icns.py || echo "ICNS generation failed"
+  #       arch -x86_64 pyinstaller --clean --noconfirm --distpath dist AutoYuPro.spec
+  #   
+  #   - name: Bundle Browser (Mac Intel)
+  #     run: |
+  #       APP_PATH="dist/AutoYuPro.app"
+  #       mkdir -p "$APP_PATH/Contents/Resources/browsers"
+  #       cp -R pw-browsers/* "$APP_PATH/Contents/Resources/browsers/"
+  #       find "$APP_PATH/Contents/Resources/browsers" -name "*.zip" -delete
+  #       find "$APP_PATH/Contents/Resources/browsers" -name "*.gz" -delete
+  #       codesign --force --deep --sign - "$APP_PATH"
+  #   
+  #   - name: Create Release Package
+  #     run: |
+  #       cd dist
+  #       cp ../PANDUAN_USER.txt .
+  #       zip -r9y ../AutoYuPro-macOS-Intel.zip AutoYuPro.app PANDUAN_USER.txt
+  #   
+  #   - name: Upload Artifact
+  #     uses: actions/upload-artifact@v4
+  #     with:
+  #       name: AutoYuPro-macOS-Intel
+  #       path: AutoYuPro-macOS-Intel.zip
 
   # --- MAC SILICON BUILD ---
   build-mac-silicon:
