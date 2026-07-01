@@ -30,7 +30,8 @@ echo "🛠️ Compiling Application..."
 pyinstaller --clean --noconfirm --distpath dist AutoYuPro.spec
 if [ -d "pw-browsers" ]; then
     mkdir -p dist/AutoYuPro.app/Contents/Resources/browsers
-    # Salin chromium (utama), chromium_headless_shell (untuk background), dan ffmpeg
+    # Salin registry.json, chromium (utama), dan ffmpeg
+    cp -R pw-browsers/registry.json dist/AutoYuPro.app/Contents/Resources/browsers/
     cp -R pw-browsers/chromium* dist/AutoYuPro.app/Contents/Resources/browsers/
     cp -R pw-browsers/ffmpeg-* dist/AutoYuPro.app/Contents/Resources/browsers/
     # Bersihkan file sampah (zip/tar/obj) agar ukuran ramping
