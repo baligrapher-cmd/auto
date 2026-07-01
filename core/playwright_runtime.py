@@ -176,28 +176,9 @@ def resolve_internal_chromium_executable(browser_root):
         for match in sorted(matches):
             if os.path.isfile(match):
                 print(f"[DEBUG] Found candidate: {match}")
-                # Cek arsitektur executable di macOS
-                if sys.platform == "darwin":
-                    try:
-                        result = subprocess.run(["lipo", "-archs", match], capture_output=True, text=True, check=True)
-                        archs = result.stdout.strip()
-                        print(f"[DEBUG] Executable {match} has architectures: {archs}")
-                        current_arch = platform.machine().lower()
-                        if current_arch in ("x86_64", "i386"):
-                            if "x86_64" in archs:
-                                print(f"[DEBUG] Found matching x86_64 executable!")
-                                return os.path.abspath(match)
-                        elif current_arch in ("arm64", "aarch64"):
-                            if "arm64" in archs:
-                                print(f"[DEBUG] Found matching arm64 executable!")
-                                return os.path.abspath(match)
-                        print(f"[DEBUG] Executable {match} has wrong architecture, skipping...")
-                    except Exception as e:
-                        print(f"[DEBUG] Failed to check architecture for {match}: {e}")
-                        # Kalo gagal cek arch, tetep return (fallback)
-                        return os.path.abspath(match)
-                else:
-                    return os.path.abspath(match)
+                # Skip lipo check entirely to avoid macOS popup asking for command line tools
+                # Just return the first valid executable we find
+                return os.path.abspath(match)
     return None
 
 
