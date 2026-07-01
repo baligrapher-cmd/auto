@@ -143,18 +143,37 @@ jobs:
         run: |
           source $CONDA/etc/profile.d/conda.sh
           conda activate autoyu
+          # Explicitly set PLAYWRIGHT_BROWSERS_PATH to ensure it goes to pw-browsers/
+          export PLAYWRIGHT_BROWSERS_PATH="${{ github.workspace }}/pw-browsers"
+          echo "PLAYWRIGHT_BROWSERS_PATH set to: $PLAYWRIGHT_BROWSERS_PATH"
           python -m playwright install chromium ffmpeg
+          # Debug: Check what's in pw-browsers/
+          echo "=== Contents of pw-browsers/ ==="
+          ls -la "$PLAYWRIGHT_BROWSERS_PATH"
+
+      - name: Debug pw-browsers cache (Intel)
+        if: steps.cache-playwright-intel.outputs.cache-hit == 'true'
+        run: |
+          echo "=== Cache hit! Contents of pw-browsers/ ==="
+          ls -la pw-browsers/ || echo "pw-browsers/ not found in cache"
 
       - name: Build Main Version (AutoYu Pro Intel)
         run: |
           source $CONDA/etc/profile.d/conda.sh
           conda activate autoyu
+          # Explicitly set PLAYWRIGHT_BROWSERS_PATH
+          export PLAYWRIGHT_BROWSERS_PATH="${{ github.workspace }}/pw-browsers"
           arch -x86_64 python -m PyInstaller --clean --noconfirm AutoYuPro.spec
           
           # Copy only the browser runtimes we actually need, then remove bulky extras.
           if [ -d "pw-browsers" ]; then
             mkdir -p dist/AutoYuPro.app/Contents/Resources/browsers
-            cp -R pw-browsers/registry.json dist/AutoYuPro.app/Contents/Resources/browsers/
+            # Copy registry.json if it exists
+            if [ -f "pw-browsers/registry.json" ]; then
+              cp -R pw-browsers/registry.json dist/AutoYuPro.app/Contents/Resources/browsers/
+            else
+              echo "WARNING: pw-browsers/registry.json not found, skipping"
+            fi
             find pw-browsers -maxdepth 1 -type d \( -name "chromium-*" -o -name "ffmpeg-*" \) -exec cp -R {} dist/AutoYuPro.app/Contents/Resources/browsers/ \;
             
             find dist/AutoYuPro.app/Contents/Resources/browsers -name "translations" -type d -exec rm -rf {} +
@@ -301,18 +320,37 @@ jobs:
         run: |
           source $CONDA/etc/profile.d/conda.sh
           conda activate autoyu
+          # Explicitly set PLAYWRIGHT_BROWSERS_PATH to ensure it goes to pw-browsers/
+          export PLAYWRIGHT_BROWSERS_PATH="${{ github.workspace }}/pw-browsers"
+          echo "PLAYWRIGHT_BROWSERS_PATH set to: $PLAYWRIGHT_BROWSERS_PATH"
           python -m playwright install chromium ffmpeg
+          # Debug: Check what's in pw-browsers/
+          echo "=== Contents of pw-browsers/ ==="
+          ls -la "$PLAYWRIGHT_BROWSERS_PATH"
+
+      - name: Debug pw-browsers cache (Apple Silicon)
+        if: steps.cache-playwright-arm64.outputs.cache-hit == 'true'
+        run: |
+          echo "=== Cache hit! Contents of pw-browsers/ ==="
+          ls -la pw-browsers/ || echo "pw-browsers/ not found in cache"
 
       - name: Build Main Version (AutoYu Pro Apple Silicon)
         run: |
           source $CONDA/etc/profile.d/conda.sh
           conda activate autoyu
+          # Explicitly set PLAYWRIGHT_BROWSERS_PATH
+          export PLAYWRIGHT_BROWSERS_PATH="${{ github.workspace }}/pw-browsers"
           python -m PyInstaller --clean --noconfirm AutoYuPro.spec
           
           # Copy only the browser runtimes we actually need, then remove bulky extras.
           if [ -d "pw-browsers" ]; then
             mkdir -p dist/AutoYuPro.app/Contents/Resources/browsers
-            cp -R pw-browsers/registry.json dist/AutoYuPro.app/Contents/Resources/browsers/
+            # Copy registry.json if it exists
+            if [ -f "pw-browsers/registry.json" ]; then
+              cp -R pw-browsers/registry.json dist/AutoYuPro.app/Contents/Resources/browsers/
+            else
+              echo "WARNING: pw-browsers/registry.json not found, skipping"
+            fi
             find pw-browsers -maxdepth 1 -type d \( -name "chromium-*" -o -name "ffmpeg-*" \) -exec cp -R {} dist/AutoYuPro.app/Contents/Resources/browsers/ \;
             
             find dist/AutoYuPro.app/Contents/Resources/browsers -name "translations" -type d -exec rm -rf {} +
