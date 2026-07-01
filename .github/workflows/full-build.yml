@@ -90,15 +90,7 @@ jobs:
           python -VV
           python -c "import platform, sys; print(platform.platform()); print(platform.machine()); print(sys.executable)"
 
-      - name: Cache Playwright Browsers (Intel)
-        uses: actions/cache@v4
-        id: cache-playwright-intel
-        with:
-          path: ${{ env.PLAYWRIGHT_BROWSERS_PATH }}
-          key: macos-14-x86_64-playwright-${{ hashFiles('requirements.txt') }}
-          restore-keys: |
-            macos-14-x86_64-playwright-
-            macos-14-playwright-
+
 
       - name: Install Dependencies (Intel)
         run: |
@@ -139,23 +131,25 @@ jobs:
           cp icon.icns assets/icon.icns || cp icon.icns icon.icns
 
       - name: Install Playwright Browsers (Intel)
-        if: steps.cache-playwright-intel.outputs.cache-hit != 'true'
         run: |
           source $CONDA/etc/profile.d/conda.sh
           conda activate autoyu
           # Explicitly set PLAYWRIGHT_BROWSERS_PATH to ensure it goes to pw-browsers/
           export PLAYWRIGHT_BROWSERS_PATH="${{ github.workspace }}/pw-browsers"
           echo "PLAYWRIGHT_BROWSERS_PATH set to: $PLAYWRIGHT_BROWSERS_PATH"
-          python -m playwright install chromium ffmpeg
-          # Debug: Check what's in pw-browsers/
-          echo "=== Contents of pw-browsers/ ==="
+          echo "=== Current directory contents ==="
+          ls -la
+          # Clean any existing pw-browsers
+          rm -rf "$PLAYWRIGHT_BROWSERS_PATH"
+          echo "=== Installing Playwright with verbose ==="
+          python -m playwright install --with-deps chromium ffmpeg
+          # Debug: Check full directory tree of pw-browsers/
+          echo "=== Full tree of pw-browsers/ ==="
+          find "$PLAYWRIGHT_BROWSERS_PATH" -print | sort
+          echo "=== ls -la of pw-browsers/ ==="
           ls -la "$PLAYWRIGHT_BROWSERS_PATH"
 
-      - name: Debug pw-browsers cache (Intel)
-        if: steps.cache-playwright-intel.outputs.cache-hit == 'true'
-        run: |
-          echo "=== Cache hit! Contents of pw-browsers/ ==="
-          ls -la pw-browsers/ || echo "pw-browsers/ not found in cache"
+
 
       - name: Build Main Version (AutoYu Pro Intel)
         run: |
@@ -267,15 +261,7 @@ jobs:
           python -VV
           python -c "import platform, sys; print(platform.platform()); print(platform.machine()); print(sys.executable)"
 
-      - name: Cache Playwright Browsers (Apple Silicon)
-        uses: actions/cache@v4
-        id: cache-playwright-arm64
-        with:
-          path: ${{ env.PLAYWRIGHT_BROWSERS_PATH }}
-          key: macos-14-arm64-playwright-${{ hashFiles('requirements.txt') }}
-          restore-keys: |
-            macos-14-arm64-playwright-
-            macos-14-playwright-
+
 
       - name: Install Dependencies (Apple Silicon)
         run: |
@@ -316,23 +302,23 @@ jobs:
           cp icon.icns assets/icon.icns || cp icon.icns icon.icns
 
       - name: Install Playwright Browsers (Apple Silicon)
-        if: steps.cache-playwright-arm64.outputs.cache-hit != 'true'
         run: |
           source $CONDA/etc/profile.d/conda.sh
           conda activate autoyu
           # Explicitly set PLAYWRIGHT_BROWSERS_PATH to ensure it goes to pw-browsers/
           export PLAYWRIGHT_BROWSERS_PATH="${{ github.workspace }}/pw-browsers"
           echo "PLAYWRIGHT_BROWSERS_PATH set to: $PLAYWRIGHT_BROWSERS_PATH"
-          python -m playwright install chromium ffmpeg
-          # Debug: Check what's in pw-browsers/
-          echo "=== Contents of pw-browsers/ ==="
+          echo "=== Current directory contents ==="
+          ls -la
+          # Clean any existing pw-browsers
+          rm -rf "$PLAYWRIGHT_BROWSERS_PATH"
+          echo "=== Installing Playwright with verbose ==="
+          python -m playwright install --with-deps chromium ffmpeg
+          # Debug: Check full directory tree of pw-browsers/
+          echo "=== Full tree of pw-browsers/ ==="
+          find "$PLAYWRIGHT_BROWSERS_PATH" -print | sort
+          echo "=== ls -la of pw-browsers/ ==="
           ls -la "$PLAYWRIGHT_BROWSERS_PATH"
-
-      - name: Debug pw-browsers cache (Apple Silicon)
-        if: steps.cache-playwright-arm64.outputs.cache-hit == 'true'
-        run: |
-          echo "=== Cache hit! Contents of pw-browsers/ ==="
-          ls -la pw-browsers/ || echo "pw-browsers/ not found in cache"
 
       - name: Build Main Version (AutoYu Pro Apple Silicon)
         run: |
