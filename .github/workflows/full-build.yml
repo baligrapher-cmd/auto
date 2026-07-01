@@ -71,8 +71,9 @@ jobs:
       run: |
         arch -x86_64 python -m venv venv
         source venv/bin/activate
+        export ARCHFLAGS="-arch x86_64"
         arch -x86_64 python -m pip install --upgrade pip
-        arch -x86_64 python -m pip install -r requirements.txt pyinstaller pillow
+        arch -x86_64 python -m pip install --platform macosx_11_0_x86_64 --only-binary=:all: -r requirements.txt pyinstaller pillow
     
     - name: Install Playwright Browsers (x64)
       run: |
