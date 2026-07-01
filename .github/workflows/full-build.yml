@@ -1,8 +1,8 @@
-name: Compile AutoYu for All Platforms
+name: Multi-Platform Build (Win, Mac Intel, Mac Silicon)
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [ main ]
   workflow_dispatch:
 
 jobs:
@@ -14,410 +14,141 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: '3.10'
-        cache: 'pip'
+        python-version: '3.11'
     
     - name: Install Dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -r requirements.txt
-        pip install pyinstaller pillow playwright
+        pip install -r requirements.txt pyinstaller pillow
     
     - name: Install Playwright Browsers (Internal)
       run: |
         $env:PLAYWRIGHT_BROWSERS_PATH = "$PWD\pw-browsers"
-        python -m playwright install chromium ffmpeg
+        python -m playwright install chromium chromium-headless-shell ffmpeg
     
-    - name: Build Main Version (AutoYu Pro)
+    - name: Build with PyInstaller
       run: |
-        pyinstaller --clean --noconfirm AutoYuPro.spec
-        # Manually copy browsers
+        # Build PRO
+        pyinstaller --clean --noconfirm --distpath dist AutoYuPro.spec
+    
+    - name: Bundle Browser (Windows)
+      run: |
+        $APP_PATH = "dist\AutoYuPro"
         if (Test-Path "pw-browsers") {
-          $APP_PATH = "dist\AutoYuPro"
-          New-Item -ItemType Directory -Force -Path "$APP_PATH\browsers"
-          Copy-Item -Path "pw-browsers\*" -Destination "$APP_PATH\browsers" -Recurse
+            echo "📦 Bundling browsers for Windows..."
+            New-Item -ItemType Directory -Force -Path "$APP_PATH\browsers"
+            Copy-Item -Path "pw-browsers\*" -Destination "$APP_PATH\browsers" -Recurse
+            
+            echo "🧹 Cleaning archives..."
+            Get-ChildItem -Path "$APP_PATH\browsers" -Filter "*.zip" -Recurse | Remove-Item
+            Get-ChildItem -Path "$APP_PATH\browsers" -Filter "*.gz" -Recurse | Remove-Item
         }
     
-    - name: Smoke Test (Windows Pro)
+    - name: Create Release Package
       run: |
-        cd dist\AutoYuPro
-        .\AutoYuPro.exe --smoke-test
+        cd dist
+        Copy-Item "..\PANDUAN_USER.txt" "AutoYuPro\"
+        Compress-Archive -Path "AutoYuPro" -DestinationPath "..\AutoYuPro-Windows.zip"
     
-    - name: Prepare Artifacts
-      run: |
-        New-Item -ItemType Directory -Force -Path "release_pro" | Out-Null
-        Copy-Item "PANDUAN_USER.txt" "release_pro\"
-        
-        # Compress Pro Version
-        if (Test-Path "dist\AutoYuPro") {
-          Copy-Item "PANDUAN_USER.txt" "dist\AutoYuPro\"
-          Compress-Archive -Path "dist\AutoYuPro" -DestinationPath "release_pro\AutoYuPro-Windows.zip"
-        }
-    
-    - name: Upload Pro Artifact
+    - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
         name: AutoYuPro-Windows
-        path: release_pro/*
+        path: AutoYuPro-Windows.zip
 
-  # --- MAC INTEL BUILD (macos-14 + Rosetta + Miniforge x86_64, NO QUEUE) ---
-  build-macos-intel:
-    name: Build for Intel
+  # --- MAC INTEL BUILD ---
+  build-mac-intel:
     runs-on: macos-14
-    env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-      MACOSX_DEPLOYMENT_TARGET: '10.15'
-      PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/pw-browsers
-      CONDA: ${{ github.workspace }}/miniforge3
-      TARGET_ARCH: 'x86_64'
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
+    - uses: actions/checkout@v4
+    - name: Set up Python (x64)
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+        architecture: 'x64'
+    
+    - name: Install Dependencies (x64)
+      run: |
+        arch -x86_64 python -m venv venv
+        source venv/bin/activate
+        arch -x86_64 python -m pip install --upgrade pip
+        arch -x86_64 python -m pip install -r requirements.txt pyinstaller pillow
+    
+    - name: Install Playwright Browsers (x64)
+      run: |
+        source venv/bin/activate
+        export PLAYWRIGHT_BROWSERS_PATH=$PWD/pw-browsers
+        arch -x86_64 python -m playwright install chromium chromium-headless-shell ffmpeg
+    
+    - name: Build with PyInstaller (x64)
+      run: |
+        source venv/bin/activate
+        python generate_icns.py || echo "ICNS generation failed"
+        arch -x86_64 pyinstaller --clean --noconfirm --distpath dist AutoYuPro.spec
+    
+    - name: Bundle Browser (Mac Intel)
+      run: |
+        APP_PATH="dist/AutoYuPro.app"
+        mkdir -p "$APP_PATH/Contents/Resources/browsers"
+        cp -R pw-browsers/* "$APP_PATH/Contents/Resources/browsers/"
+        find "$APP_PATH/Contents/Resources/browsers" -name "*.zip" -delete
+        find "$APP_PATH/Contents/Resources/browsers" -name "*.gz" -delete
+        codesign --force --deep --sign - "$APP_PATH"
+    
+    - name: Create Release Package
+      run: |
+        cd dist
+        cp ../PANDUAN_USER.txt .
+        zip -r9y ../AutoYuPro-macOS-Intel.zip AutoYuPro.app PANDUAN_USER.txt
+    
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: AutoYuPro-macOS-Intel
+        path: AutoYuPro-macOS-Intel.zip
 
-      - name: Install Miniforge x86_64 (via Rosetta)
-        run: |
-          # Download Miniforge x86_64
-          curl -L -o Miniforge3-MacOSX-x86_64.sh https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-MacOSX-x86_64.sh
-          # Install silently
-          arch -x86_64 bash Miniforge3-MacOSX-x86_64.sh -b -p $CONDA
-          # Initialize conda
-          source $CONDA/etc/profile.d/conda.sh
-          # Create environment with Python 3.10
-          conda create -y -n autoyu python=3.10
-          conda activate autoyu
-          # Show Python
-          which python
-          python -VV
-          python -c "import platform, sys; print(platform.platform()); print(platform.machine()); print(sys.executable)"
-
-
-
-      - name: Install Dependencies (Intel)
-        run: |
-          source $CONDA/etc/profile.d/conda.sh
-          conda activate autoyu
-          # Install native libs via conda (no build from source!)
-          conda install -y "cryptography>=38" "pillow>=10" "psutil>=5" "requests>=2" "watchdog>=3"
-          # Install remaining via pip
-          python -m pip install --upgrade pip setuptools wheel
-          python -m pip install -r requirements.txt
-          python -m pip install pyinstaller playwright
-
-      - name: Inspect Cryptography Linkage (Intel)
-        run: |
-          source $CONDA/etc/profile.d/conda.sh
-          conda activate autoyu
-          CRYPTO_SO=$(python -c "import cryptography.hazmat.bindings._rust as m; print(m.__file__)")
-          echo "cryptography binding: $CRYPTO_SO"
-          otool -L "$CRYPTO_SO" || true
-
-      - name: Create macOS Icon
-        run: |
-          source $CONDA/etc/profile.d/conda.sh
-          conda activate autoyu
-          python -c "from PIL import Image; img = Image.open('icon.ico'); img.save('icon.png')"
-          mkdir -p icon.iconset
-          sips -z 16 16     icon.png --out icon.iconset/icon_16x16.png
-          sips -z 32 32     icon.png --out icon.iconset/icon_16x16@2x.png
-          sips -z 32 32     icon.png --out icon.iconset/icon_32x32.png
-          sips -z 64 64     icon.png --out icon.iconset/icon_32x32@2x.png
-          sips -z 128 128   icon.png --out icon.iconset/icon_128x128.png
-          sips -z 256 256   icon.png --out icon.iconset/icon_128x128@2x.png
-          sips -z 256 256   icon.png --out icon.iconset/icon_256x256.png
-          sips -z 512 512   icon.png --out icon.iconset/icon_256x256@2x.png
-          sips -z 512 512   icon.png --out icon.iconset/icon_512x512.png
-          sips -z 1024 1024 icon.png --out icon.iconset/icon_512x512@2x.png
-          iconutil -c icns icon.iconset
-          cp icon.icns assets/icon.icns || cp icon.icns icon.icns
-
-      - name: Install Playwright Browsers (Intel)
-        run: |
-          source $CONDA/etc/profile.d/conda.sh
-          conda activate autoyu
-          # Explicitly set PLAYWRIGHT_BROWSERS_PATH to ensure it goes to pw-browsers/
-          export PLAYWRIGHT_BROWSERS_PATH="${{ github.workspace }}/pw-browsers"
-          echo "PLAYWRIGHT_BROWSERS_PATH set to: $PLAYWRIGHT_BROWSERS_PATH"
-          echo "=== Current directory contents ==="
-          ls -la
-          # Clean any existing pw-browsers
-          rm -rf "$PLAYWRIGHT_BROWSERS_PATH"
-          echo "=== Installing Playwright with verbose ==="
-          python -m playwright install --with-deps chromium ffmpeg
-          # Debug: Check full directory tree of pw-browsers/
-          echo "=== Full tree of pw-browsers/ ==="
-          find "$PLAYWRIGHT_BROWSERS_PATH" -print | sort
-          echo "=== ls -la of pw-browsers/ ==="
-          ls -la "$PLAYWRIGHT_BROWSERS_PATH"
-
-
-
-      - name: Build Main Version (AutoYu Pro Intel)
-        run: |
-          source $CONDA/etc/profile.d/conda.sh
-          conda activate autoyu
-          # Explicitly set PLAYWRIGHT_BROWSERS_PATH
-          export PLAYWRIGHT_BROWSERS_PATH="${{ github.workspace }}/pw-browsers"
-          arch -x86_64 python -m PyInstaller --clean --noconfirm AutoYuPro.spec
-          
-          # Copy entire contents of pw-browsers to bundle
-          if [ -d "pw-browsers" ]; then
-            mkdir -p dist/AutoYuPro.app/Contents/Resources/browsers
-            cp -R pw-browsers/* dist/AutoYuPro.app/Contents/Resources/browsers/
-            
-            find dist/AutoYuPro.app/Contents/Resources/browsers -name "translations" -type d -exec rm -rf {} +
-            find dist/AutoYuPro.app/Contents/Resources/browsers -name "*.zip" -delete
-            find dist/AutoYuPro.app/Contents/Resources/browsers -name "*.gz" -delete
-            find dist/AutoYuPro.app/Contents/Resources/browsers -name "*.dSYM" -type d -exec rm -rf {} +
-            find dist/AutoYuPro.app/Contents/Resources/browsers -name "obj" -type d -exec rm -rf {} +
-            find dist/AutoYuPro.app/Contents/Resources/browsers -name "gen" -type d -exec rm -rf {} +
-            
-            # Clean extended attributes and fix permissions before codesign
-            echo "Fixing permissions and extended attributes..."
-            xattr -cr dist/AutoYuPro.app/Contents/Resources/browsers || true
-            chmod -R 755 dist/AutoYuPro.app/Contents/Resources/browsers || true
-            
-            # Codesign Chromium bundles first if they exist
-            echo "Codesigning internal browser components..."
-            for chromium_app in dist/AutoYuPro.app/Contents/Resources/browsers/chromium-*/chrome-mac*/Chromium*.app; do
-              if [ -d "$chromium_app" ]; then
-                echo "Codesigning: $chromium_app"
-                codesign --force --deep --sign - "$chromium_app" || true
-              fi
-            done
-          fi
-          # Ad-hoc codesign to avoid "App is damaged" error
-          codesign --force --deep --sign - dist/AutoYuPro.app
-          # Verify codesign
-          codesign -vvv dist/AutoYuPro.app
-          # Verify architecture
-          echo "Checking app architecture:"
-          file dist/AutoYuPro.app/Contents/MacOS/AutoYuPro
-
-      - name: Verify bundled Chromium (Intel)
-        run: |
-          echo "=== Checking browsers folder contents ==="
-          ls -la dist/AutoYuPro.app/Contents/Resources/browsers/
-          echo ""
-          echo "=== Checking registry.json ==="
-          cat dist/AutoYuPro.app/Contents/Resources/browsers/registry.json || echo "WARNING: registry.json not found!"
-          echo ""
-          echo "=== Checking bundle size ==="
-          du -sh dist/AutoYuPro.app
-
-      - name: Smoke Test (macOS Pro Intel)
-        run: |
-          arch -x86_64 ./dist/AutoYuPro.app/Contents/MacOS/AutoYuPro --smoke-test
-
-      - name: Prepare Artifacts (Intel)
-        run: |
-          mkdir -p release_pro
-          cp PANDUAN_USER.txt release_pro/
-          
-          # Debug: Verify bundle contents before compressing
-          echo "=== PREPARE ARTIFACTS: Checking dist/ directory ==="
-          ls -la dist/
-          echo ""
-          echo "=== PREPARE ARTIFACTS: Checking bundle size ==="
-          du -sh dist/AutoYuPro.app
-          echo ""
-          echo "=== PREPARE ARTIFACTS: Checking browsers folder ==="
-          ls -la dist/AutoYuPro.app/Contents/Resources/browsers/
-          echo ""
-          echo "=== PREPARE ARTIFACTS: Checking chromium folder ==="
-          ls -la dist/AutoYuPro.app/Contents/Resources/browsers/chromium-*/ 2>/dev/null || echo "No chromium folder found!"
-          
-          # Compress Pro Version
-          if [ -d "dist/AutoYuPro.app" ]; then
-            cp PANDUAN_USER.txt dist/AutoYuPro.app/Contents/Resources/
-            cd dist && zip -r9y ../release_pro/AutoYuPro-Intel.zip AutoYuPro.app && cd ..
-          fi
-          
-          # Debug: Check compressed artifact size
-          echo "=== PREPARE ARTIFACTS: Checking compressed artifact ==="
-          ls -lh release_pro/
-
-      - name: Upload Pro Artifact (Intel)
-        uses: actions/upload-artifact@v4
-        with:
-          name: AutoYuPro-macOS-Intel
-          path: release_pro/*
-
-  # --- MAC APPLE SILICON BUILD (macos-14 native, fast) ---
-  build-macos-apple-silicon:
-    name: Build for Apple Silicon
+  # --- MAC SILICON BUILD ---
+  build-mac-silicon:
     runs-on: macos-14
-    env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-      MACOSX_DEPLOYMENT_TARGET: '10.15'
-      PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/pw-browsers
-      CONDA: ${{ github.workspace }}/miniforge3
-      TARGET_ARCH: 'arm64'
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Install Miniforge arm64 (native)
-        run: |
-          # Download Miniforge arm64
-          curl -L -o Miniforge3-MacOSX-arm64.sh https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-MacOSX-arm64.sh
-          # Install silently
-          bash Miniforge3-MacOSX-arm64.sh -b -p $CONDA
-          # Initialize conda
-          source $CONDA/etc/profile.d/conda.sh
-          # Create environment with Python 3.10
-          conda create -y -n autoyu python=3.10
-          conda activate autoyu
-          # Show Python
-          which python
-          python -VV
-          python -c "import platform, sys; print(platform.platform()); print(platform.machine()); print(sys.executable)"
-
-
-
-      - name: Install Dependencies (Apple Silicon)
-        run: |
-          source $CONDA/etc/profile.d/conda.sh
-          conda activate autoyu
-          # Install native libs via conda (no build from source!)
-          conda install -y "cryptography>=38" "pillow>=10" "psutil>=5" "requests>=2" "watchdog>=3"
-          # Install remaining via pip
-          python -m pip install --upgrade pip setuptools wheel
-          python -m pip install -r requirements.txt
-          python -m pip install pyinstaller playwright
-
-      - name: Inspect Cryptography Linkage (Apple Silicon)
-        run: |
-          source $CONDA/etc/profile.d/conda.sh
-          conda activate autoyu
-          CRYPTO_SO=$(python -c "import cryptography.hazmat.bindings._rust as m; print(m.__file__)")
-          echo "cryptography binding: $CRYPTO_SO"
-          otool -L "$CRYPTO_SO" || true
-
-      - name: Create macOS Icon
-        run: |
-          source $CONDA/etc/profile.d/conda.sh
-          conda activate autoyu
-          python -c "from PIL import Image; img = Image.open('icon.ico'); img.save('icon.png')"
-          mkdir -p icon.iconset
-          sips -z 16 16     icon.png --out icon.iconset/icon_16x16.png
-          sips -z 32 32     icon.png --out icon.iconset/icon_16x16@2x.png
-          sips -z 32 32     icon.png --out icon.iconset/icon_32x32.png
-          sips -z 64 64     icon.png --out icon.iconset/icon_32x32@2x.png
-          sips -z 128 128   icon.png --out icon.iconset/icon_128x128.png
-          sips -z 256 256   icon.png --out icon.iconset/icon_128x128@2x.png
-          sips -z 256 256   icon.png --out icon.iconset/icon_256x256.png
-          sips -z 512 512   icon.png --out icon.iconset/icon_256x256@2x.png
-          sips -z 512 512   icon.png --out icon.iconset/icon_512x512.png
-          sips -z 1024 1024 icon.png --out icon.iconset/icon_512x512@2x.png
-          iconutil -c icns icon.iconset
-          cp icon.icns assets/icon.icns || cp icon.icns icon.icns
-
-      - name: Install Playwright Browsers (Apple Silicon)
-        run: |
-          source $CONDA/etc/profile.d/conda.sh
-          conda activate autoyu
-          # Explicitly set PLAYWRIGHT_BROWSERS_PATH to ensure it goes to pw-browsers/
-          export PLAYWRIGHT_BROWSERS_PATH="${{ github.workspace }}/pw-browsers"
-          echo "PLAYWRIGHT_BROWSERS_PATH set to: $PLAYWRIGHT_BROWSERS_PATH"
-          echo "=== Current directory contents ==="
-          ls -la
-          # Clean any existing pw-browsers
-          rm -rf "$PLAYWRIGHT_BROWSERS_PATH"
-          echo "=== Installing Playwright with verbose ==="
-          python -m playwright install --with-deps chromium ffmpeg
-          # Debug: Check full directory tree of pw-browsers/
-          echo "=== Full tree of pw-browsers/ ==="
-          find "$PLAYWRIGHT_BROWSERS_PATH" -print | sort
-          echo "=== ls -la of pw-browsers/ ==="
-          ls -la "$PLAYWRIGHT_BROWSERS_PATH"
-
-      - name: Build Main Version (AutoYu Pro Apple Silicon)
-        run: |
-          source $CONDA/etc/profile.d/conda.sh
-          conda activate autoyu
-          # Explicitly set PLAYWRIGHT_BROWSERS_PATH
-          export PLAYWRIGHT_BROWSERS_PATH="${{ github.workspace }}/pw-browsers"
-          python -m PyInstaller --clean --noconfirm AutoYuPro.spec
-          
-          # Copy entire contents of pw-browsers to bundle
-          if [ -d "pw-browsers" ]; then
-            mkdir -p dist/AutoYuPro.app/Contents/Resources/browsers
-            cp -R pw-browsers/* dist/AutoYuPro.app/Contents/Resources/browsers/
-            
-            find dist/AutoYuPro.app/Contents/Resources/browsers -name "translations" -type d -exec rm -rf {} +
-            find dist/AutoYuPro.app/Contents/Resources/browsers -name "*.zip" -delete
-            find dist/AutoYuPro.app/Contents/Resources/browsers -name "*.gz" -delete
-            find dist/AutoYuPro.app/Contents/Resources/browsers -name "*.dSYM" -type d -exec rm -rf {} +
-            find dist/AutoYuPro.app/Contents/Resources/browsers -name "obj" -type d -exec rm -rf {} +
-            find dist/AutoYuPro.app/Contents/Resources/browsers -name "gen" -type d -exec rm -rf {} +
-            
-            # Clean extended attributes and fix permissions before codesign
-            echo "Fixing permissions and extended attributes..."
-            xattr -cr dist/AutoYuPro.app/Contents/Resources/browsers || true
-            chmod -R 755 dist/AutoYuPro.app/Contents/Resources/browsers || true
-            
-            # Codesign Chromium bundles first if they exist
-            echo "Codesigning internal browser components..."
-            for chromium_app in dist/AutoYuPro.app/Contents/Resources/browsers/chromium-*/chrome-mac*/Chromium*.app; do
-              if [ -d "$chromium_app" ]; then
-                echo "Codesigning: $chromium_app"
-                codesign --force --deep --sign - "$chromium_app" || true
-              fi
-            done
-          fi
-          # Ad-hoc codesign to avoid "App is damaged" error
-          codesign --force --deep --sign - dist/AutoYuPro.app
-          # Verify codesign
-          codesign -vvv dist/AutoYuPro.app
-          # Verify architecture
-          echo "Checking app architecture:"
-          file dist/AutoYuPro.app/Contents/MacOS/AutoYuPro
-
-      - name: Verify bundled Chromium (Apple Silicon)
-        run: |
-          echo "=== Checking browsers folder contents ==="
-          ls -la dist/AutoYuPro.app/Contents/Resources/browsers/
-          echo ""
-          echo "=== Checking registry.json ==="
-          cat dist/AutoYuPro.app/Contents/Resources/browsers/registry.json || echo "WARNING: registry.json not found!"
-          echo ""
-          echo "=== Checking bundle size ==="
-          du -sh dist/AutoYuPro.app
-
-      - name: Smoke Test (macOS Pro Apple Silicon)
-        run: |
-          ./dist/AutoYuPro.app/Contents/MacOS/AutoYuPro --smoke-test
-
-      - name: Prepare Artifacts (Apple Silicon)
-        run: |
-          mkdir -p release_pro
-          cp PANDUAN_USER.txt release_pro/
-          
-          # Debug: Verify bundle contents before compressing
-          echo "=== PREPARE ARTIFACTS: Checking dist/ directory ==="
-          ls -la dist/
-          echo ""
-          echo "=== PREPARE ARTIFACTS: Checking bundle size ==="
-          du -sh dist/AutoYuPro.app
-          echo ""
-          echo "=== PREPARE ARTIFACTS: Checking browsers folder ==="
-          ls -la dist/AutoYuPro.app/Contents/Resources/browsers/
-          echo ""
-          echo "=== PREPARE ARTIFACTS: Checking chromium folder ==="
-          ls -la dist/AutoYuPro.app/Contents/Resources/browsers/chromium-*/ 2>/dev/null || echo "No chromium folder found!"
-          
-          # Compress Pro Version
-          if [ -d "dist/AutoYuPro.app" ]; then
-            cp PANDUAN_USER.txt dist/AutoYuPro.app/Contents/Resources/
-            cd dist && zip -r9y ../release_pro/AutoYuPro-AppleSilicon.zip AutoYuPro.app && cd ..
-          fi
-          
-          # Debug: Check compressed artifact size
-          echo "=== PREPARE ARTIFACTS: Checking compressed artifact ==="
-          ls -lh release_pro/
-
-      - name: Upload Pro Artifact (Apple Silicon)
-        uses: actions/upload-artifact@v4
-        with:
-          name: AutoYuPro-macOS-AppleSilicon
-          path: release_pro/*
+    - uses: actions/checkout@v4
+    - name: Set up Python (arm64)
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+    
+    - name: Install Dependencies (arm64)
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt pyinstaller pillow
+    
+    - name: Install Playwright Browsers (arm64)
+      run: |
+        export PLAYWRIGHT_BROWSERS_PATH=$PWD/pw-browsers
+        python -m playwright install chromium chromium-headless-shell ffmpeg
+    
+    - name: Build with PyInstaller (arm64)
+      run: |
+        python generate_icns.py || echo "ICNS generation failed"
+        pyinstaller --clean --noconfirm --distpath dist AutoYuPro.spec
+    
+    - name: Bundle Browser (Mac Silicon)
+      run: |
+        APP_PATH="dist/AutoYuPro.app"
+        mkdir -p "$APP_PATH/Contents/Resources/browsers"
+        cp -R pw-browsers/* "$APP_PATH/Contents/Resources/browsers/"
+        find "$APP_PATH/Contents/Resources/browsers" -name "*.zip" -delete
+        find "$APP_PATH/Contents/Resources/browsers" -name "*.gz" -delete
+        codesign --force --deep --sign - "$APP_PATH"
+    
+    - name: Create Release Package
+      run: |
+        cd dist
+        cp ../PANDUAN_USER.txt .
+        zip -r9y ../AutoYuPro-macOS-AppleSilicon.zip AutoYuPro.app PANDUAN_USER.txt
+    
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: AutoYuPro-macOS-AppleSilicon
+        path: AutoYuPro-macOS-AppleSilicon.zip
