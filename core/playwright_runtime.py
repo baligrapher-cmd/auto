@@ -135,7 +135,6 @@ def configure_playwright_browser_path():
 
 def resolve_internal_chromium_executable(browser_root):
     import platform
-    import subprocess
     if not browser_root or not os.path.isdir(browser_root):
         print(f"[DEBUG] resolve_internal_chromium_executable: browser_root invalid: {browser_root}")
         return None
@@ -170,16 +169,43 @@ def resolve_internal_chromium_executable(browser_root):
             os.path.join(browser_root, "chrome-*", "chrome-linux", "chrome"),
         ]
 
+    collected = []
     for pattern in patterns:
         matches = glob.glob(pattern)
         print(f"[DEBUG] Pattern {pattern} found {len(matches)} matches")
-        for match in sorted(matches):
+        for match in matches:
             if os.path.isfile(match):
-                print(f"[DEBUG] Found candidate: {match}")
-                # Skip lipo check entirely to avoid macOS popup asking for command line tools
-                # Just return the first valid executable we find
-                return os.path.abspath(match)
-    return None
+                collected.append(os.path.abspath(match))
+
+    if not collected:
+        return None
+
+    if sys.platform == "darwin":
+        current_arch = platform.machine().lower()
+
+        def _score(path):
+            p = path.lower()
+            score = 0
+            if current_arch in ("arm64", "aarch64"):
+                if "arm64" in p:
+                    score += 10
+                if "x64" in p or "x86_64" in p:
+                    score -= 10
+            elif current_arch in ("x86_64", "i386"):
+                if "x64" in p or "x86_64" in p:
+                    score += 10
+                if "arm64" in p or "aarch64" in p:
+                    score -= 10
+            return (-score, p)
+
+        collected = sorted(set(collected), key=_score)
+        chosen = collected[0]
+        print(f"[DEBUG] Found candidate (best match): {chosen}")
+        return chosen
+
+    chosen = sorted(set(collected))[0]
+    print(f"[DEBUG] Found candidate: {chosen}")
+    return chosen
 
 
 def find_executable():
