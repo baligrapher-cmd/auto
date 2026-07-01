@@ -24,7 +24,7 @@ jobs:
     - name: Install Playwright Browsers (Internal)
       run: |
         $env:PLAYWRIGHT_BROWSERS_PATH = "$PWD\pw-browsers"
-        python -m playwright install chromium chromium-headless-shell ffmpeg
+        python -m playwright install chromium ffmpeg
     
     - name: Build with PyInstaller
       run: |
@@ -78,7 +78,7 @@ jobs:
       run: |
         source venv/bin/activate
         export PLAYWRIGHT_BROWSERS_PATH=$PWD/pw-browsers
-        arch -x86_64 python -m playwright install chromium chromium-headless-shell ffmpeg
+        arch -x86_64 python -m playwright install chromium ffmpeg
     
     - name: Build with PyInstaller (x64)
       run: |
@@ -125,7 +125,7 @@ jobs:
     - name: Install Playwright Browsers (arm64)
       run: |
         export PLAYWRIGHT_BROWSERS_PATH=$PWD/pw-browsers
-        python -m playwright install chromium chromium-headless-shell ffmpeg
+        python -m playwright install chromium ffmpeg
     
     - name: Build with PyInstaller (arm64)
       run: |
