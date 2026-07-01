@@ -1847,6 +1847,7 @@ class MainWindow(QMainWindow):
         self.batch_spin.setEnabled(False)
         self.batch_spin.setButtonSymbols(QSpinBox.NoButtons)
         self.batch_spin.installEventFilter(self) # Disable scroll
+        
         self.tabs_spin.valueChanged.connect(self._on_tabs_value_changed)
         self.tabs_spin.valueChanged.connect(self.update_dynamic_helper)
         self.batch_spin.valueChanged.connect(self._on_batch_value_changed)

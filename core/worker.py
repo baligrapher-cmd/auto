@@ -290,7 +290,13 @@ class AutomationWorker(QThread):
                 browser_launched = False
                 # Pertama coba configure_playwright_browser_path untuk set PLAYWRIGHT_BROWSERS_PATH
                 internal_browser_path = configure_playwright_browser_path()
-                if internal_browser_path:
+                internal_executable = find_executable()
+                print(f"[Worker] internal_executable found: {internal_executable}")
+                if internal_browser_path and internal_executable:
+                    launch_attempts = [
+                        ("Internal Chromium (PLAYWRIGHT_BROWSERS_PATH + explicit executable)", {"executable_path": internal_executable}),
+                    ]
+                elif internal_browser_path:
                     launch_attempts = [
                         ("Internal Chromium (PLAYWRIGHT_BROWSERS_PATH)", {}),
                     ]
@@ -930,8 +936,9 @@ class AutomationWorker(QThread):
                 else:
                     file_chunks = [[] for _ in range(num_tabs)]
 
-                # Global lock for heavy operations (only 1 tab can inject/compress at a time)
-                global_lock = {'injector': None}
+                # Global lock for heavy operations (only one tab can inject/compress at a time)
+                # waiting_new_tab: true jika ada tab baru yang akan dibuka, tab lama tidak boleh ambil lock
+                global_lock = {'injector': None, 'waiting_new_tab': False}
 
                 tabs = []
                 # Buka 1 tab dulu untuk menghindari spike awal
@@ -1087,32 +1094,19 @@ class AutomationWorker(QThread):
                     
                     self.progress_signal.emit(total_uploaded, total_failed, total_duplicate, total_active, total_files)
                     
-                    # Tambah tab baru hanya setelah tab sebelumnya selesai kompres (agar tidak kompres barengan).
+                    # Buka tab baru HANYA setelah tab terakhir selesai kompres pertama kali
                     if self._is_running and current_tabs < num_tabs:
-                        prev_tab = tabs[current_tabs - 1]
-                        # Check: 1) compression_done (preview siap) OR
-                        #        2) first_compression_done (pernah selesai kompres) OR
-                        #        3) state past WAIT_PREVIEW
-                        past_wait_preview = prev_tab.state in [
-                            AutoState.WAIT_METADATA_CONTAINER,
-                            AutoState.FILL_METADATA,
-                            AutoState.VERIFY_FILLED,
-                            AutoState.FILL_LOCATION,
-                            AutoState.SUBMIT,
-                            AutoState.CONFIRM_SUCCESS,
-                            AutoState.NEXT_BATCH,
-                            AutoState.DONE
-                        ]
-                        # Log untuk debug (dinonaktifkan)
-                        # self.log_signal.emit(
-                        #     f"DEBUG Tab{prev_tab.tab_id} | state={prev_tab.state}, "
-                        #     f"compression_done={prev_tab.compression_done}, "
-                        #     f"first_compression_done={prev_tab.first_compression_done}, "
-                        #     f"past_wait_preview={past_wait_preview}"
-                        # )
-                        if (prev_tab.compression_done 
-                            or prev_tab.first_compression_done 
-                            or past_wait_preview):
+                        # Hanya buka tab baru jika tab terakhir sudah selesai kompres
+                        last_tab = tabs[-1] if tabs else None
+                        should_open = (
+                            last_tab and getattr(last_tab, 'compression_done', False)
+                        )
+                        
+                        if should_open:
+                            self.log_signal.emit(f"[DEBUG] Tab terakhir selesai kompres, buka tab {current_tabs + 1}")
+                            # Set flag bahwa tab baru akan dibuka, tab lama tidak boleh ambil lock
+                            global_lock['waiting_new_tab'] = True
+                            
                             # CEK KETAT: Apakah browser masih hidup sebelum mencoba buka tab baru
                             is_browser_alive = False
                             try:
@@ -1123,10 +1117,12 @@ class AutomationWorker(QThread):
                                 is_browser_alive = False
 
                             if not is_browser_alive:
+                                global_lock['waiting_new_tab'] = False
                                 self._is_running = False
                                 break
 
-                            self.log_signal.emit(f"Memulai Tab {current_tabs + 1} setelah Tab {prev_tab.tab_id} selesai kompresi...")
+                            self.log_signal.emit(f"Memulai Tab {current_tabs + 1}...")
+                            
                             try:
                                 # Gunakan timeout sangat singkat untuk deteksi dini
                                 new_page = self.context.new_page()
@@ -1137,8 +1133,15 @@ class AutomationWorker(QThread):
                                     pass
                                 index = current_tabs
                                 new_files = file_chunks[index] if index < len(file_chunks) else []
+                                
+                                # SET INFORMASI TAB BARU YANG BERHAK MENGAMBIL LOCK
+                                tab_baru_id = index + 1
+                                global_lock['waiting_new_tab'] = True
+                                global_lock['next_tab_id'] = tab_baru_id
+                                self.log_signal.emit(f"[DEBUG] Memberikan lock ke tab {tab_baru_id}, waiting_new_tab aktif")
+                                
                                 new_tab = TabAutomation(
-                                    tab_id=index+1,
+                                    tab_id=tab_baru_id,
                                     page=new_page,
                                     files=new_files,
                                     config=self.config,
@@ -1147,6 +1150,19 @@ class AutomationWorker(QThread):
                                     location_update_callback=self._handle_location_resolved,
                                     tree_update_callback=self._handle_fototree_resolved
                                 )
+                                # NAVIGASI KE HALAMAN UPLOAD DULU!
+                                try:
+                                    new_page.goto("https://www.fotoyu.com/upload", wait_until="domcontentloaded", timeout=30000)
+                                except Exception:
+                                    pass
+                                # SET LOCK DAN FLAG SKIP KE SELECT_MODE!
+                                new_tab.log(f"[DEBUG] Tab {tab_baru_id} sudah punya lock, SKIP ke SELECT_MODE")
+                                new_tab.global_lock['injector'] = tab_baru_id
+                                new_tab.state = AutoState.SELECT_MODE
+                                new_tab.state_start_time = time.time()
+                                new_tab.current_batch_files = new_files[:new_tab.batch_size] if new_files else []
+                                new_tab.file_index = new_tab.batch_size
+                                new_tab._mark_batch(new_tab.current_batch_files, 'pending')
                                 tabs.append(new_tab)
                                 current_tabs += 1
                             except Exception as e:

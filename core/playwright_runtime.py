@@ -19,15 +19,20 @@ def _unique_paths(paths):
 
 def _looks_like_playwright_browser_root(path):
     if not path or not os.path.isdir(path):
+        print(f"[DEBUG] _looks_like_playwright_browser_root: {path} is not a valid directory")
         return False
 
+    print(f"[DEBUG] _looks_like_playwright_browser_root: checking {path}")
     try:
         entries = os.listdir(path)
-    except OSError:
+        print(f"[DEBUG] _looks_like_playwright_browser_root: contents: {entries}")
+    except OSError as e:
+        print(f"[DEBUG] _looks_like_playwright_browser_root: OS error {e}")
         return False
 
     # Check for registry.json (official Playwright structure)
     if "registry.json" in entries:
+        print(f"[DEBUG] _looks_like_playwright_browser_root: found registry.json, returning True")
         return True
 
     # Check if any entry is a directory starting with browser prefixes
@@ -44,8 +49,10 @@ def _looks_like_playwright_browser_root(path):
     for entry in entries:
         entry_path = os.path.join(path, entry)
         if os.path.isdir(entry_path) and any(entry.startswith(prefix) for prefix in browser_prefixes):
+            print(f"[DEBUG] _looks_like_playwright_browser_root: found browser dir {entry}, returning True")
             return True
     
+    print(f"[DEBUG] _looks_like_playwright_browser_root: no match, returning False")
     return False
 
 
@@ -111,18 +118,29 @@ def get_playwright_browser_candidates():
 
 
 def configure_playwright_browser_path():
+    import platform
+    print(f"[DEBUG] configure_playwright_browser_path() - System: {platform.platform()} - Machine: {platform.machine()}")
     candidates = get_playwright_browser_candidates()
+    print(f"[DEBUG] configure_playwright_browser_path() - candidates: {candidates}")
     for candidate in candidates:
+        print(f"[DEBUG] configure_playwright_browser_path() - checking candidate: {candidate}")
         if _looks_like_playwright_browser_root(candidate):
             os.environ["PLAYWRIGHT_BROWSERS_PATH"] = candidate
+            print(f"[DEBUG] configure_playwright_browser_path() - SET to: {candidate}")
             return candidate
         
+    print(f"[DEBUG] configure_playwright_browser_path() - NO valid browser root found!")
     return None
 
 
 def resolve_internal_chromium_executable(browser_root):
+    import platform
+    import subprocess
     if not browser_root or not os.path.isdir(browser_root):
+        print(f"[DEBUG] resolve_internal_chromium_executable: browser_root invalid: {browser_root}")
         return None
+
+    print(f"[DEBUG] resolve_internal_chromium_executable: looking in {browser_root}")
 
     if sys.platform.startswith("win"):
         patterns = [
@@ -154,16 +172,43 @@ def resolve_internal_chromium_executable(browser_root):
 
     for pattern in patterns:
         matches = glob.glob(pattern)
+        print(f"[DEBUG] Pattern {pattern} found {len(matches)} matches")
         for match in sorted(matches):
             if os.path.isfile(match):
-                return os.path.abspath(match)
+                print(f"[DEBUG] Found candidate: {match}")
+                # Cek arsitektur executable di macOS
+                if sys.platform == "darwin":
+                    try:
+                        result = subprocess.run(["lipo", "-archs", match], capture_output=True, text=True, check=True)
+                        archs = result.stdout.strip()
+                        print(f"[DEBUG] Executable {match} has architectures: {archs}")
+                        current_arch = platform.machine().lower()
+                        if current_arch in ("x86_64", "i386"):
+                            if "x86_64" in archs:
+                                print(f"[DEBUG] Found matching x86_64 executable!")
+                                return os.path.abspath(match)
+                        elif current_arch in ("arm64", "aarch64"):
+                            if "arm64" in archs:
+                                print(f"[DEBUG] Found matching arm64 executable!")
+                                return os.path.abspath(match)
+                        print(f"[DEBUG] Executable {match} has wrong architecture, skipping...")
+                    except Exception as e:
+                        print(f"[DEBUG] Failed to check architecture for {match}: {e}")
+                        # Kalo gagal cek arch, tetep return (fallback)
+                        return os.path.abspath(match)
+                else:
+                    return os.path.abspath(match)
     return None
 
 
 def find_executable():
     """Mencari executable chromium di semua kandidat path browser."""
-    for candidate in get_playwright_browser_candidates():
+    candidates = get_playwright_browser_candidates()
+    print(f"[DEBUG] find_executable() - candidates: {candidates}")
+    for candidate in candidates:
         exe = resolve_internal_chromium_executable(candidate)
         if exe:
+            print(f"[DEBUG] find_executable() - found: {exe}")
             return exe
+    print(f"[DEBUG] find_executable() - NO executable found!")
     return None

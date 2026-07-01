@@ -1222,7 +1222,7 @@ class TabAutomation:
                         tabId=self.tab_id,
                         state=str(self.state),
                         url=getattr(self.page, "url", None),
-                        injector=self.global_lock.get("injector") if isinstance(self.global_lock, dict) else None,
+                        injectors=self.global_lock.get("injectors", []) if isinstance(self.global_lock, dict) else None,
                     )
             except Exception:
                 pass
@@ -1303,52 +1303,108 @@ class TabAutomation:
             elif self.state == AutoState.WAIT_QUEUE:
                 # Jika tidak ada file tersisa untuk diproses, hentikan tab agar tidak terlihat "menunggu"
                 if self.file_index >= len(self.all_files) or not self.current_batch_files:
-                    if self.global_lock.get('injector') == self.tab_id:
-                        self.global_lock['injector'] = None
                     self.is_running = False
                     self.state = AutoState.DONE
                     return False
-                # Cek apakah injector sedang kosong atau sedang dipegang tab ini
-                injector = self.global_lock.get('injector')
-                if injector is None or injector == self.tab_id:
-                    #region debug-point tab-next-compress-injector-acquire
-                    try:
-                        _trae_dbg(
-                            "injector_acquire",
-                            runId=os.environ.get("TRAE_DBG_RUN_ID") or "pre",
-                            tabId=self.tab_id,
-                            injectorBefore=injector,
-                            elapsed=elapsed,
-                        )
-                    except Exception:
-                        pass
-                    #endregion debug-point tab-next-compress-injector-acquire
-                    self.global_lock['injector'] = self.tab_id
-                    self.state = AutoState.SELECT_MODE
-                    self.state_start_time = time.time()
-                else:
-                    #region debug-point tab-next-compress-injector-wait
-                    try:
-                        now_dbg = time.time()
-                        last_dbg = getattr(self, "_trae_dbg_last_wait_emit", 0.0)
-                        if now_dbg - last_dbg >= 1.0:
-                            self._trae_dbg_last_wait_emit = now_dbg
+                
+                self.log(f"[DEBUG] Tab {self.tab_id} di WAIT_QUEUE, lock: {self.global_lock.get('injector')}, waiting_new_tab: {self.global_lock.get('waiting_new_tab')}")
+                
+                # Prioritas: jika ada tab baru yang akan datang, tab baru didahulukan
+                if self.global_lock.get('waiting_new_tab'):
+                    # HANYA TAB DENGAN ID next_tab_id YANG BOLEH MENGAMBIL LOCK!
+                    next_tab_id = self.global_lock.get('next_tab_id')
+                    if self.tab_id != next_tab_id:
+                        self.log(f"[DEBUG] Tab {self.tab_id} menunggu (bukan tab prioritas: {next_tab_id})")
+                        if int(elapsed) % 30 == 0:
+                             self.log(f"⏳ Menunggu antrian... (tab prioritas: {next_tab_id})")
+                        
+                        if elapsed > 600: # Timeout antrian 10 menit
+                             self.global_lock['injector'] = None
+                             self.global_lock['waiting_new_tab'] = False
+                             self.state = AutoState.OPEN_UPLOAD_PAGE
+                    elif self.global_lock.get('injector') is None:
+                        #region debug-point tab-next-compress-injector-acquire
+                        try:
                             _trae_dbg(
-                                "injector_wait",
+                                "injector_acquire",
                                 runId=os.environ.get("TRAE_DBG_RUN_ID") or "pre",
                                 tabId=self.tab_id,
-                                injectorHeldBy=injector,
+                                injectorBefore=self.global_lock.get('injector'),
                                 elapsed=elapsed,
                             )
-                    except Exception:
-                        pass
-                    #endregion debug-point tab-next-compress-injector-wait
-                    if int(elapsed) % 30 == 0:
-                         self.log(f"⏳ Menunggu antrian...")
-                    
-                    if elapsed > 600: # Timeout antrian 10 menit
-                         self.global_lock['injector'] = None # Force reset
-                         self.state = AutoState.OPEN_UPLOAD_PAGE
+                        except Exception:
+                            pass
+                        #endregion debug-point tab-next-compress-injector-acquire
+                        
+                        self.log(f"[DEBUG] Tab {self.tab_id} (tab prioritas) mengambil lock!")
+                        self.global_lock['injector'] = self.tab_id
+                        self.global_lock['waiting_new_tab'] = False
+                        self.global_lock['next_tab_id'] = None
+                        self.state = AutoState.SELECT_MODE
+                        self.state_start_time = time.time()
+                    elif self.global_lock.get('injector') == self.tab_id:
+                        self.log(f"[DEBUG] Tab {self.tab_id} (tab prioritas) sudah punya lock, ke SELECT_MODE")
+                        self.global_lock['waiting_new_tab'] = False
+                        self.global_lock['next_tab_id'] = None
+                        self.state = AutoState.SELECT_MODE
+                        self.state_start_time = time.time()
+                    else:
+                        # Menunggu lock kosong
+                        if int(elapsed) % 30 == 0:
+                             self.log(f"⏳ Menunggu antrian... (dipakai oleh Tab {self.global_lock.get('injector')})")
+                        
+                        if elapsed > 600: # Timeout antrian 10 menit
+                             self.global_lock['injector'] = None
+                             self.global_lock['waiting_new_tab'] = False
+                             self.global_lock['next_tab_id'] = None
+                             self.state = AutoState.OPEN_UPLOAD_PAGE
+                else:
+                    # No waiting_new_tab, logic biasa
+                    if self.global_lock.get('injector') is None:
+                        #region debug-point tab-next-compress-injector-acquire
+                        try:
+                            _trae_dbg(
+                                "injector_acquire",
+                                runId=os.environ.get("TRAE_DBG_RUN_ID") or "pre",
+                                tabId=self.tab_id,
+                                injectorBefore=self.global_lock.get('injector'),
+                                elapsed=elapsed,
+                            )
+                        except Exception:
+                            pass
+                        #endregion debug-point tab-next-compress-injector-acquire
+                        
+                        self.log(f"[DEBUG] Tab {self.tab_id} mengambil lock!")
+                        self.global_lock['injector'] = self.tab_id
+                        self.state = AutoState.SELECT_MODE
+                        self.state_start_time = time.time()
+                    elif self.global_lock.get('injector') == self.tab_id:
+                        self.log(f"[DEBUG] Tab {self.tab_id} sudah punya lock, ke SELECT_MODE")
+                        self.state = AutoState.SELECT_MODE
+                        self.state_start_time = time.time()
+                    else:
+                        #region debug-point tab-next-compress-injector-wait
+                        try:
+                            now_dbg = time.time()
+                            last_dbg = getattr(self, "_trae_dbg_last_wait_emit", 0.0)
+                            if now_dbg - last_dbg >= 1.0:
+                                self._trae_dbg_last_wait_emit = now_dbg
+                                _trae_dbg(
+                                    "injector_wait",
+                                    runId=os.environ.get("TRAE_DBG_RUN_ID") or "pre",
+                                    tabId=self.tab_id,
+                                    injectorHeldBy=self.global_lock.get('injector'),
+                                    elapsed=elapsed,
+                                )
+                        except Exception:
+                            pass
+                        #endregion debug-point tab-next-compress-injector-wait
+                        if int(elapsed) % 30 == 0:
+                             self.log(f"⏳ Menunggu antrian... (dipakai oleh Tab {self.global_lock.get('injector')})")
+                        
+                        if elapsed > 600: # Timeout antrian 10 menit
+                             self.global_lock['injector'] = None
+                             self.state = AutoState.OPEN_UPLOAD_PAGE
 
             # -------------------------------------------------
             # SELECT_MODE (Maps to UPLOAD state - Inject Files)
@@ -1382,7 +1438,7 @@ class TabAutomation:
                                         tabId=self.tab_id,
                                         branch="video-tab-file-chooser",
                                         fileCount=len(self.current_batch_files or []),
-                                        injector=self.global_lock.get("injector") if isinstance(self.global_lock, dict) else None,
+                                        injectors=self.global_lock.get("injectors", []) if isinstance(self.global_lock, dict) else None,
                                     )
                                 except Exception:
                                     pass
@@ -1515,7 +1571,7 @@ class TabAutomation:
                                     tabId=self.tab_id,
                                     branch="input-set-files",
                                     fileCount=len(valid_files or []),
-                                    injector=self.global_lock.get("injector") if isinstance(self.global_lock, dict) else None,
+                                    injectors=self.global_lock.get("injectors", []) if isinstance(self.global_lock, dict) else None,
                                 )
                             except Exception:
                                 pass
@@ -1554,7 +1610,7 @@ class TabAutomation:
                                     tabId=self.tab_id,
                                     branch="file-chooser-set-files",
                                     fileCount=len(valid_files or []),
-                                    injector=self.global_lock.get("injector") if isinstance(self.global_lock, dict) else None,
+                                    injectors=self.global_lock.get("injectors", []) if isinstance(self.global_lock, dict) else None,
                                 )
                             except Exception:
                                 pass
@@ -1567,7 +1623,7 @@ class TabAutomation:
                                 "injector_after_select_mode",
                                 runId=os.environ.get("TRAE_DBG_RUN_ID") or "pre",
                                 tabId=self.tab_id,
-                                injector=self.global_lock.get("injector") if isinstance(self.global_lock, dict) else None,
+                                injectors=self.global_lock.get("injectors", []) if isinstance(self.global_lock, dict) else None,
                             )
                         except Exception:
                             pass
@@ -1632,7 +1688,9 @@ class TabAutomation:
                 if can_proceed:
                     if video_count > 0 or foto_count > 0:
                         self.log(f"✔ Konten siap.")
+                    # Lepaskan lock segera setelah kompres selesai, agar tab lain bisa inject
                     if self.global_lock.get('injector') == self.tab_id:
+                        self.log(f"[DEBUG] Tab {self.tab_id} melepaskan lock!")
                         self.global_lock['injector'] = None
                     self.compression_done = True
                     self.first_compression_done = True  # First compression is done, never reset this!
