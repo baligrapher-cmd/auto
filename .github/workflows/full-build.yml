@@ -213,11 +213,28 @@ jobs:
           mkdir -p release_pro
           cp PANDUAN_USER.txt release_pro/
           
+          # Debug: Verify bundle contents before compressing
+          echo "=== PREPARE ARTIFACTS: Checking dist/ directory ==="
+          ls -la dist/
+          echo ""
+          echo "=== PREPARE ARTIFACTS: Checking bundle size ==="
+          du -sh dist/AutoYuPro.app
+          echo ""
+          echo "=== PREPARE ARTIFACTS: Checking browsers folder ==="
+          ls -la dist/AutoYuPro.app/Contents/Resources/browsers/
+          echo ""
+          echo "=== PREPARE ARTIFACTS: Checking chromium folder ==="
+          ls -la dist/AutoYuPro.app/Contents/Resources/browsers/chromium-*/ 2>/dev/null || echo "No chromium folder found!"
+          
           # Compress Pro Version
           if [ -d "dist/AutoYuPro.app" ]; then
             cp PANDUAN_USER.txt dist/AutoYuPro.app/Contents/Resources/
             cd dist && zip -r9y ../release_pro/AutoYuPro-Intel.zip AutoYuPro.app && cd ..
           fi
+          
+          # Debug: Check compressed artifact size
+          echo "=== PREPARE ARTIFACTS: Checking compressed artifact ==="
+          ls -lh release_pro/
 
       - name: Upload Pro Artifact (Intel)
         uses: actions/upload-artifact@v4
@@ -376,11 +393,28 @@ jobs:
           mkdir -p release_pro
           cp PANDUAN_USER.txt release_pro/
           
+          # Debug: Verify bundle contents before compressing
+          echo "=== PREPARE ARTIFACTS: Checking dist/ directory ==="
+          ls -la dist/
+          echo ""
+          echo "=== PREPARE ARTIFACTS: Checking bundle size ==="
+          du -sh dist/AutoYuPro.app
+          echo ""
+          echo "=== PREPARE ARTIFACTS: Checking browsers folder ==="
+          ls -la dist/AutoYuPro.app/Contents/Resources/browsers/
+          echo ""
+          echo "=== PREPARE ARTIFACTS: Checking chromium folder ==="
+          ls -la dist/AutoYuPro.app/Contents/Resources/browsers/chromium-*/ 2>/dev/null || echo "No chromium folder found!"
+          
           # Compress Pro Version
           if [ -d "dist/AutoYuPro.app" ]; then
             cp PANDUAN_USER.txt dist/AutoYuPro.app/Contents/Resources/
             cd dist && zip -r9y ../release_pro/AutoYuPro-AppleSilicon.zip AutoYuPro.app && cd ..
           fi
+          
+          # Debug: Check compressed artifact size
+          echo "=== PREPARE ARTIFACTS: Checking compressed artifact ==="
+          ls -lh release_pro/
 
       - name: Upload Pro Artifact (Apple Silicon)
         uses: actions/upload-artifact@v4
