@@ -12,6 +12,7 @@ from core.state_machine import AutoState, UploadMode, MODE_CONFIG
 from core.license import check_license, get_app_data_dir, get_app_data_dir_by_name
 from core.playwright_runtime import configure_playwright_browser_path, find_executable, resolve_internal_chromium_executable
 from core.event_history import EventHistory
+from core.session_optimizer import SessionManager, FileOptimizer
 
 class AutomationWorker(QThread):
     log_signal = Signal(str)
@@ -25,6 +26,8 @@ class AutomationWorker(QThread):
     browser_disconnected_signal = Signal() # Signal when browser disconnects/crashes
     location_resolved_signal = Signal(str, str, str) # location_name, match_type, source
     fototree_resolved_signal = Signal(str, str, str) # tree_name, match_type, source
+    resumable_session_found = Signal(int) # remaining_files
+    session_loaded = Signal(int, int) # uploaded_count, remaining_count
 
     def __init__(self, config):
         super().__init__()
@@ -43,6 +46,13 @@ class AutomationWorker(QThread):
         self._last_monitor_time = 0
         self._known_photo_count = -1 # -1 means not yet initialized
         
+        # New features: Auto-Resume and File Optimization
+        self.enable_auto_resume = config.get('enable_auto_resume', True)
+        self.enable_file_optimization = config.get('enable_file_optimization', True)
+        self.account_name = config.get('current_account', 'default')
+        self.session_manager = SessionManager(self.account_name)
+        self.file_optimizer = FileOptimizer()
+        
         # Track uploaded files
         self.history_file = None
         self.uploaded_history = set()
@@ -53,6 +63,10 @@ class AutomationWorker(QThread):
         self._last_saved_state = None
         self._page_crash_handlers_added = False
         self._last_location_resolution = None
+        
+        # Session tracking
+        self._last_session_save = 0
+        self._session_save_interval = 30 # Save session every 30 seconds
 
     def _handle_location_resolved(self, location_name, match_type, source):
         resolved_name = str(location_name or "").strip()
@@ -907,6 +921,36 @@ class AutomationWorker(QThread):
 
                 all_files = _get_files_with_filter(self.config['folder'])
                 
+                # NEW: Auto-Resume Session Check
+                uploaded_files = []
+                failed_files = []
+                start_index = 0
+                
+                if self.enable_auto_resume:
+                    session = self.session_manager.load_session(self.config['folder'])
+                    if session:
+                        # Load state from session
+                        session_files = session.get('files', [])
+                        uploaded_files = session.get('uploaded_files', [])
+                        failed_files = session.get('failed_files', [])
+                        start_index = session.get('current_index', 0)
+                        
+                        # Verify files match
+                        if len(session_files) == len(all_files):
+                            # Files match - use resume
+                            remaining = len(all_files) - start_index
+                            self.log_signal.emit(f"🔄 Session ditemukan! Ada {remaining} file yang tersisa untuk diupload.")
+                            self.resumable_session_found.emit(remaining)
+                            
+                            # Load existing uploaded history and merge
+                            for f in uploaded_files:
+                                self.uploaded_history.add(f)
+                            time.sleep(1) # Give time for UI to react
+                        else:
+                            # Files changed - delete old session
+                            self.log_signal.emit("ℹ️ Daftar file berubah, session lama diabaikan.")
+                            self.session_manager.delete_session(self.config['folder'])
+                
                 # USER FIX: SINKRONISASI TRACKER PATH (Mac Compatibility)
                 folder_hash = _get_folder_hash(self.config['folder'])
                 self.history_file = os.path.join(account_root, f"tracker_{folder_hash}.json")
@@ -1120,6 +1164,33 @@ class AutomationWorker(QThread):
                     total_active = sum(tab.active_count for tab in tabs)
                     
                     self.progress_signal.emit(total_uploaded, total_failed, total_duplicate, total_active, total_files)
+                    
+                    # NEW: Auto-Save Session Berkala
+                    if self.enable_auto_resume:
+                        current_time = time.time()
+                        if (current_time - self._last_session_save) > self._session_save_interval:
+                            # Collect latest tracking data
+                            all_uploaded = []
+                            all_failed = []
+                            
+                            # Calculate progress dari semua tab
+                            for t in tabs:
+                                for file_path, status_info in t.upload_tracking.items():
+                                    if status_info.get('status') == 'success':
+                                        all_uploaded.append(file_path)
+                                    elif status_info.get('status') == 'failed':
+                                        all_failed.append(file_path)
+                            
+                            # Save session
+                            self.session_manager.save_session(
+                                self.config['folder'],
+                                all_files,
+                                all_uploaded,
+                                all_failed,
+                                len(all_uploaded) + len(all_failed),
+                                self.config
+                            )
+                            self._last_session_save = current_time
                     
                     # Buka tab baru HANYA setelah tab terakhir selesai kompres pertama kali
                     if self._is_running and current_tabs < num_tabs:
@@ -1399,6 +1470,13 @@ class AutomationWorker(QThread):
             self.log_signal.emit(f"TOTAL SUKSES: {total_all} file")
             self.log_signal.emit(f"TOTAL GAGAL: {final_total_failed} file")
             self.log_signal.emit("="*30 + "\n")
+            
+            # NEW: Delete session when done
+            if self.enable_auto_resume:
+                self.session_manager.delete_session(self.config['folder'])
+                # Cleanup temporary files if any
+                if self.enable_file_optimization:
+                    self.file_optimizer.cleanup_temp_files()
             
             # Cleanup browser context (Hanya jika SEMUA SUKSES)
             if final_total_failed == 0:

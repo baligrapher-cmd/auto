@@ -10,6 +10,7 @@ import urllib.error
 from playwright.sync_api import Page
 from core.state_machine import AutoState, UploadMode, MODE_CONFIG
 from core.license import check_license
+from core.session_optimizer import FileOptimizer
 
 #region debug-point tab-next-compress-setup
 _TRAE_DBG_URL = None
@@ -231,6 +232,11 @@ class TabAutomation:
         self.failed_count = 0
         self.duplicate_count = 0
         self.active_count = 0
+        
+        # NEW: File Optimization
+        self.enable_optimization = config.get('enable_file_optimization', True)
+        self.file_optimizer = FileOptimizer()
+        self.optimized_files = {} # {original_path: optimized_path}
 
         # Network Intercept for JSON Response
         self.last_api_response = None
@@ -1406,6 +1412,23 @@ class TabAutomation:
                 trigger = None
                 is_input = False
                 
+                # NEW: Optimize files before upload
+                files_to_upload = []
+                if self.enable_optimization and self.upload_type == "foto":
+                    for file_path in self.current_batch_files:
+                        if self.file_optimizer.should_optimize(file_path):
+                            self.log(f"🔄 Mengoptimisasi file besar: {os.path.basename(file_path)}")
+                            optimized_path = self.file_optimizer.optimize_image(file_path)
+                            if optimized_path:
+                                files_to_upload.append(optimized_path)
+                                self.optimized_files[file_path] = optimized_path
+                            else:
+                                files_to_upload.append(file_path)
+                        else:
+                            files_to_upload.append(file_path)
+                else:
+                    files_to_upload = self.current_batch_files
+                
                 if self.upload_type == "video":
                     # PRIORITAS: Klik tab video dulu
                     try:
@@ -1422,7 +1445,7 @@ class TabAutomation:
                                 # Jika dialog terbuka, tangani dengan Playwright agar tidak muncul di Windows
                                 file_chooser = fc_info.value
                                 # self.log(f"Memproses file...")
-                                file_chooser.set_files(self.current_batch_files)
+                                file_chooser.set_files(files_to_upload)
                                 #region debug-point tab-next-compress-video-inject
                                 try:
                                     _trae_dbg(
@@ -1455,7 +1478,7 @@ class TabAutomation:
                                     with self.page.expect_file_chooser(timeout=1000) as fc_info:
                                         video_tab_alt.click(force=True)
                                     file_chooser = fc_info.value
-                                    file_chooser.set_files(self.current_batch_files)
+                                    file_chooser.set_files(files_to_upload)
                                     self.injection_done = True
                                     self.state = AutoState.WAIT_PREVIEW
                                     self.state_start_time = time.time()
@@ -1533,13 +1556,13 @@ class TabAutomation:
                             # self.log(f"Mengirim file...")
                             # Verifikasi file sebelum upload (ensure real paths for macOS compatibility)
                             valid_files = []
-                            for f in self.current_batch_files:
+                            for f in files_to_upload:
                                 real_path = os.path.realpath(os.path.abspath(os.path.expanduser(f)))
                                 if os.path.exists(real_path):
                                     valid_files.append(real_path)
                             
                             if not valid_files:
-                                self.log(f"❌ {len(self.current_batch_files)} file tidak ditemukan di folder.")
+                                self.log(f"❌ {len(files_to_upload)} file tidak ditemukan di folder.")
                                 self._mark_batch(self.current_batch_files, 'failed')
                                 self.failed_count += len(self.current_batch_files)
                                 self.file_index += len(self.current_batch_files)
@@ -1547,18 +1570,6 @@ class TabAutomation:
                                 self.state = AutoState.OPEN_UPLOAD_PAGE
                                 return True
                             
-                            # Jika hanya sebagian yang ada, tandai yang hilang sebagai gagal
-                            if len(valid_files) < len(self.current_batch_files):
-                                missing_count = len(self.current_batch_files) - len(valid_files)
-                                self.log(f"⚠️ {missing_count} file tidak ditemukan, melanjutkan sisanya...")
-                                # Cari file mana yang hilang dan tandai gagal
-                                for f in self.current_batch_files:
-                                    real_f = os.path.realpath(os.path.abspath(os.path.expanduser(f)))
-                                    if real_f not in valid_files:
-                                        self._mark_file(f, 'failed')
-                                        self.failed_count += 1
-                                
-                            self.current_batch_files = valid_files
                             trigger.set_input_files(valid_files)
                             self.injection_done = True
                             #region debug-point tab-next-compress-inject-input
@@ -1582,12 +1593,12 @@ class TabAutomation:
                             file_chooser = fc_info.value
                             # Verifikasi file (ensure real paths for macOS compatibility)
                             valid_files = []
-                            for f in self.current_batch_files:
+                            for f in files_to_upload:
                                 real_path = os.path.realpath(os.path.abspath(os.path.expanduser(f)))
                                 if os.path.exists(real_path):
                                     valid_files.append(real_path)
                             if not valid_files:
-                                self.log(f"❌ {len(self.current_batch_files)} file tidak ditemukan di folder.")
+                                self.log(f"❌ {len(files_to_upload)} file tidak ditemukan di folder.")
                                 self._mark_batch(self.current_batch_files, 'failed')
                                 self.failed_count += len(self.current_batch_files)
                                 self.file_index += len(self.current_batch_files)
@@ -1595,14 +1606,6 @@ class TabAutomation:
                                 self.state = AutoState.OPEN_UPLOAD_PAGE
                                 return True
 
-                            if len(valid_files) < len(self.current_batch_files):
-                                missing_count = len(self.current_batch_files) - len(valid_files)
-                                self.log(f"⚠️ {missing_count} file tidak ditemukan, melanjutkan sisanya...")
-                                for f in self.current_batch_files:
-                                    if f not in valid_files:
-                                        self._mark_file(f, 'failed')
-                                        self.failed_count += 1
-                                self.current_batch_files = valid_files
                             file_chooser.set_files(valid_files)
                             self.injection_done = True
                             #region debug-point tab-next-compress-inject-chooser
