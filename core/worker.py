@@ -350,7 +350,6 @@ class AutomationWorker(QThread):
                     self.log_signal.emit(f"⚠️ Browser internal gagal: {err_msg[:50]}...")
                     self.context = None
                     
-                    import time
                     time.sleep(0.5)  # Small delay to clean up resources
                     
                     # FALLBACK 1: Jika Chromium internal tidak ada, coba Google Chrome PC
