@@ -261,24 +261,43 @@ class AutomationWorker(QThread):
                 if is_headless:
                     self.log_signal.emit("🖥️ Mode Headless aktif! Browser berjalan tanpa tampilan.")
                 
-                launch_args = {
-                    "user_data_dir": user_data_dir,
-                    "headless": is_headless,
-                    "args": [
-                        "--no-sandbox",
-                        "--disable-setuid-sandbox",
-                        "--disable-dev-shm-usage",
+                # Detect OS for macOS-specific adjustments
+                is_macos = sys.platform == "darwin"
+                
+                browser_args = [
+                    "--no-sandbox",
+                    "--disable-setuid-sandbox",
+                    "--disable-dev-shm-usage",
+                    "--no-first-run",
+                    "--disable-sync",
+                    "--window-size=1280,720", # Paksa ukuran desktop
+                ]
+                
+                if is_macos:
+                    # macOS-specific browser arguments
+                    browser_args.extend([
                         "--disable-gpu",
-                        "--no-first-run",
+                        "--disable-features=VizDisplayCompositor",
+                        "--disable-software-rasterizer",
+                        "--enable-features=WebContentsForceDark",
+                        "--disable-blink-features=AutomationControlled",  # Help with detection
+                    ])
+                else:
+                    # Windows-specific arguments
+                    browser_args.extend([
+                        "--disable-gpu",
                         "--disable-features=RendererCodeIntegrity",
                         "--disable-software-rasterizer",
                         "--disable-gpu-sandbox",
                         "--disable-accelerated-2d-canvas",
-                        "--disable-sync",
-                        "--window-size=1280,720", # Paksa ukuran desktop
-                        "--start-maximized" # Start maximized untuk tampilan desktop penuh
-                    ],
-                    "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36", # Paksa Desktop User Agent
+                        "--start-maximized",
+                    ])
+                
+                launch_args = {
+                    "user_data_dir": user_data_dir,
+                    "headless": is_headless,
+                    "args": browser_args,
+                    "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" if is_macos else "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
                     "no_viewport": True,
                     "permissions": ["geolocation"],
                     "geolocation": {"latitude": -8.65, "longitude": 115.216667}, # Default Bali
@@ -851,6 +870,7 @@ class AutomationWorker(QThread):
                         # USER FIX: SINKRONISASI LOGIKA DETEKSI FILE DENGAN UI
                         # Menggunakan os.walk agar konsisten dan lebih handal di macOS
                         real_folder = os.path.abspath(os.path.expanduser(folder_path))
+                        real_folder = os.path.realpath(real_folder) # Resolve symlinks (important for macOS)
                         
                         upload_type = self.config.get('type', 'foto')
                         if upload_type == 'foto':
@@ -871,13 +891,18 @@ class AutomationWorker(QThread):
                                     
                                 if name.lower().endswith(exts):
                                     full_path = os.path.join(root, name)
-                                    all_found.append(os.path.abspath(full_path))
+                                    # Ensure we get the real, absolute path for Playwright (macOS compatibility)
+                                    full_path = os.path.realpath(os.path.abspath(full_path))
+                                    if os.path.exists(full_path):
+                                        all_found.append(full_path)
                         
                         # Filter unik dan sorting
                         unique_files = sorted(list(set(all_found)))
                         return unique_files
                     except Exception as e:
                         print(f"Error listing files: {e}")
+                        import traceback
+                        traceback.print_exc()
                         return []
 
                 all_files = _get_files_with_filter(self.config['folder'])

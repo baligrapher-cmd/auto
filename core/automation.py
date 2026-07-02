@@ -1531,8 +1531,12 @@ class TabAutomation:
                                 pass
                         if is_input:
                             # self.log(f"Mengirim file...")
-                            # Verifikasi file sebelum upload
-                            valid_files = [f for f in self.current_batch_files if os.path.exists(f)]
+                            # Verifikasi file sebelum upload (ensure real paths for macOS compatibility)
+                            valid_files = []
+                            for f in self.current_batch_files:
+                                real_path = os.path.realpath(os.path.abspath(os.path.expanduser(f)))
+                                if os.path.exists(real_path):
+                                    valid_files.append(real_path)
                             
                             if not valid_files:
                                 self.log(f"❌ {len(self.current_batch_files)} file tidak ditemukan di folder.")
@@ -1549,7 +1553,8 @@ class TabAutomation:
                                 self.log(f"⚠️ {missing_count} file tidak ditemukan, melanjutkan sisanya...")
                                 # Cari file mana yang hilang dan tandai gagal
                                 for f in self.current_batch_files:
-                                    if f not in valid_files:
+                                    real_f = os.path.realpath(os.path.abspath(os.path.expanduser(f)))
+                                    if real_f not in valid_files:
                                         self._mark_file(f, 'failed')
                                         self.failed_count += 1
                                 
@@ -1575,7 +1580,12 @@ class TabAutomation:
                                 trigger.click(force=True)
                             
                             file_chooser = fc_info.value
-                            valid_files = [f for f in self.current_batch_files if os.path.exists(f)]
+                            # Verifikasi file (ensure real paths for macOS compatibility)
+                            valid_files = []
+                            for f in self.current_batch_files:
+                                real_path = os.path.realpath(os.path.abspath(os.path.expanduser(f)))
+                                if os.path.exists(real_path):
+                                    valid_files.append(real_path)
                             if not valid_files:
                                 self.log(f"❌ {len(self.current_batch_files)} file tidak ditemukan di folder.")
                                 self._mark_batch(self.current_batch_files, 'failed')
