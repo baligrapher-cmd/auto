@@ -12,7 +12,7 @@ from core.state_machine import AutoState, UploadMode, MODE_CONFIG
 from core.license import check_license, get_app_data_dir, get_app_data_dir_by_name
 from core.playwright_runtime import configure_playwright_browser_path, find_executable, resolve_internal_chromium_executable
 from core.event_history import EventHistory
-from core.session_optimizer import SessionManager, FileOptimizer
+from core.session_optimizer import SessionManager
 
 class AutomationWorker(QThread):
     log_signal = Signal(str)
@@ -46,12 +46,10 @@ class AutomationWorker(QThread):
         self._last_monitor_time = 0
         self._known_photo_count = -1 # -1 means not yet initialized
         
-        # New features: Auto-Resume and File Optimization
+        # New features: Auto-Resume
         self.enable_auto_resume = config.get('enable_auto_resume', True)
-        self.enable_file_optimization = config.get('enable_file_optimization', True)
         self.account_name = config.get('current_account', 'default')
         self.session_manager = SessionManager(self.account_name)
-        self.file_optimizer = FileOptimizer()
         
         # Track uploaded files
         self.history_file = None
@@ -208,6 +206,8 @@ class AutomationWorker(QThread):
             self.log_signal.emit(f"❌ Kesalahan Sistem: {str(e)}")
             self.finished_signal.emit()
 
+
+            
     def _run_internal(self):
         print(f"[Worker] Thread started. Mode: {self.mode}")
         # HARD LICENSE CHECK - STARTUP
@@ -921,6 +921,8 @@ class AutomationWorker(QThread):
 
                 all_files = _get_files_with_filter(self.config['folder'])
                 
+                # Optimisasi file akan dilakukan per-file saat upload (tidak semua sekaligus di awal)
+                
                 # NEW: Auto-Resume Session Check
                 uploaded_files = []
                 failed_files = []
@@ -1474,9 +1476,6 @@ class AutomationWorker(QThread):
             # NEW: Delete session when done
             if self.enable_auto_resume:
                 self.session_manager.delete_session(self.config['folder'])
-                # Cleanup temporary files if any
-                if self.enable_file_optimization:
-                    self.file_optimizer.cleanup_temp_files()
             
             # Cleanup browser context (Hanya jika SEMUA SUKSES)
             if final_total_failed == 0:

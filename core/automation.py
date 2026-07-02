@@ -10,7 +10,6 @@ import urllib.error
 from playwright.sync_api import Page
 from core.state_machine import AutoState, UploadMode, MODE_CONFIG
 from core.license import check_license
-from core.session_optimizer import FileOptimizer
 
 #region debug-point tab-next-compress-setup
 _TRAE_DBG_URL = None
@@ -232,11 +231,6 @@ class TabAutomation:
         self.failed_count = 0
         self.duplicate_count = 0
         self.active_count = 0
-        
-        # NEW: File Optimization
-        self.enable_optimization = config.get('enable_file_optimization', True)
-        self.file_optimizer = FileOptimizer()
-        self.optimized_files = {} # {original_path: optimized_path}
 
         # Network Intercept for JSON Response
         self.last_api_response = None
@@ -1412,22 +1406,7 @@ class TabAutomation:
                 trigger = None
                 is_input = False
                 
-                # NEW: Optimize files before upload
-                files_to_upload = []
-                if self.enable_optimization and self.upload_type == "foto":
-                    for file_path in self.current_batch_files:
-                        if self.file_optimizer.should_optimize(file_path):
-                            self.log(f"🔄 Mengoptimisasi file besar: {os.path.basename(file_path)}")
-                            optimized_path = self.file_optimizer.optimize_image(file_path)
-                            if optimized_path:
-                                files_to_upload.append(optimized_path)
-                                self.optimized_files[file_path] = optimized_path
-                            else:
-                                files_to_upload.append(file_path)
-                        else:
-                            files_to_upload.append(file_path)
-                else:
-                    files_to_upload = self.current_batch_files
+                files_to_upload = self.current_batch_files
                 
                 if self.upload_type == "video":
                     # PRIORITAS: Klik tab video dulu
