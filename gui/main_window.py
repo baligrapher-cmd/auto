@@ -1499,8 +1499,8 @@ class MainWindow(QMainWindow):
         upload_card = QFrame()
         upload_card.setProperty("class", "card")
         upload_layout = QVBoxLayout(upload_card)
-        upload_layout.setContentsMargins(20, 12, 20, 12)
-        upload_layout.setSpacing(8)
+        upload_layout.setContentsMargins(12, 8, 12, 8)
+        upload_layout.setSpacing(6)
         
         upload_header = QHBoxLayout()
         upload_title = QLabel("MODE UNGGAHAN")
@@ -1537,8 +1537,8 @@ class MainWindow(QMainWindow):
         config_card = QFrame()
         config_card.setProperty("class", "card")
         config_layout = QVBoxLayout(config_card)
-        config_layout.setContentsMargins(20, 12, 20, 12)
-        config_layout.setSpacing(12)
+        config_layout.setContentsMargins(12, 8, 12, 8)
+        config_layout.setSpacing(8)
         
         self.config_title = QLabel("KONFIGURASI SISTEM")
         self.config_title.setProperty("class", "card_title")
@@ -1553,7 +1553,7 @@ class MainWindow(QMainWindow):
         self.chk_auto_calc.toggled.connect(self.toggle_auto_calc)
 
         grid = QGridLayout()
-        grid.setSpacing(12)
+        grid.setSpacing(8)
         grid.setColumnStretch(1, 1)
         
         def add_form_row(label_text, widget_or_layout, row_idx):
@@ -1567,7 +1567,7 @@ class MainWindow(QMainWindow):
 
         # Folder
         folder_main_layout = QVBoxLayout() # Gunakan Vertical agar rapi
-        folder_main_layout.setSpacing(10)
+        folder_main_layout.setSpacing(6)
 
         # Baris 1: Pilihan Sumber
         source_row = QHBoxLayout()
@@ -1787,7 +1787,7 @@ class MainWindow(QMainWindow):
         self.desc_input = QTextEdit()
         self.desc_input.setText("Uploaded via AutoYu V3 Engine") # Default text
         self.desc_input.setPlaceholderText("Masukkan deskripsi di sini...")
-        self.desc_input.setMaximumHeight(60)
+        self.desc_input.setMaximumHeight(45)
         self.desc_input.setStyleSheet("color: #E2E8F0; font-size: 12px; border: 1px solid #334155;")
         
         # Tampilkan info Deskripsi yang aktif
@@ -1805,13 +1805,13 @@ class MainWindow(QMainWindow):
         self.opt_card = QFrame()
         self.opt_card.setStyleSheet("background-color: rgba(15, 23, 42, 0.3); border: 1px solid #334155; border-radius: 8px;")
         opt_v_layout = QVBoxLayout(self.opt_card)
-        opt_v_layout.setContentsMargins(16, 16, 16, 16)
-        opt_v_layout.setSpacing(12)
+        opt_v_layout.setContentsMargins(12, 10, 12, 10)
+        opt_v_layout.setSpacing(8)
 
         # Row 1: Mode Auto & Result Helper
         auto_header = QHBoxLayout()
         auto_header.addWidget(self.chk_auto_calc)
-        auto_header.addSpacing(12)
+        auto_header.addSpacing(8)
         
         # New: Auto Retry Checkbox
         self.chk_auto_retry = QCheckBox("Auto-Proses Sisa Gagal")
@@ -1820,10 +1820,10 @@ class MainWindow(QMainWindow):
         self.chk_auto_retry.setChecked(False)
         self.chk_auto_retry.setFocusPolicy(Qt.NoFocus)
         auto_header.addWidget(self.chk_auto_retry)
-        auto_header.addSpacing(12)
+        auto_header.addSpacing(8)
 
         self.auto_helper = QLabel("✨ Mode Auto Aktif: Performa dioptimalkan otomatis.")
-        self.auto_helper.setStyleSheet("color: #6366F1; font-size: 13px; font-weight: 700;")
+        self.auto_helper.setStyleSheet("color: #6366F1; font-size: 12px; font-weight: 700;")
         auto_header.addWidget(self.auto_helper)
         auto_header.addStretch()
         opt_v_layout.addLayout(auto_header)
@@ -1832,7 +1832,7 @@ class MainWindow(QMainWindow):
         self.tabs_spin = QSpinBox()
         self.tabs_spin.setStyleSheet("background-color: #0B1220; border: 1px solid #334155;")
         self.tabs_spin.setRange(1, 50)
-        self.tabs_spin.setFixedHeight(35)
+        self.tabs_spin.setFixedHeight(32)
         self.tabs_spin.setFocusPolicy(Qt.ClickFocus)
         self.tabs_spin.setEnabled(False)
         self.tabs_spin.setButtonSymbols(QSpinBox.NoButtons)
@@ -1842,7 +1842,7 @@ class MainWindow(QMainWindow):
         self.batch_spin.setStyleSheet("background-color: #0B1220; border: 1px solid #334155;")
         self.batch_spin.setRange(1, 2000)
         self.batch_spin.setValue(20)
-        self.batch_spin.setFixedHeight(35)
+        self.batch_spin.setFixedHeight(32)
         self.batch_spin.setFocusPolicy(Qt.ClickFocus)
         self.batch_spin.setEnabled(False)
         self.batch_spin.setButtonSymbols(QSpinBox.NoButtons)
@@ -1854,7 +1854,7 @@ class MainWindow(QMainWindow):
         self.batch_spin.valueChanged.connect(self.update_dynamic_helper)
 
         manual_grid = QGridLayout()
-        manual_grid.setSpacing(12)
+        manual_grid.setSpacing(8)
         
         lbl_tabs = QLabel("🌐 Jumlah TAB Chrome:")
         lbl_tabs.setProperty("class", "field_label")
@@ -1868,28 +1868,15 @@ class MainWindow(QMainWindow):
         
         opt_v_layout.addLayout(manual_grid)
 
-        # Row 3: Visual Example (New)
-        self.example_label = QLabel()
-        self.example_label.setStyleSheet("color: #6366F1; font-size: 12px; font-weight: 600;")
-        self.example_label.setText("💡 Contoh: 2500 file → 5 TAB x 500 file/tab")
-        opt_v_layout.addWidget(self.example_label)
-
-        # Row 4: Manual Helper Text (Improved)
-        self.manual_helper = QLabel()
-        self.manual_helper.setStyleSheet("color: #94A3B8; font-size: 12px; font-style: italic;")
-        self.manual_helper.setWordWrap(True)
-        self.manual_helper.setText("⚙️ Mode Manual: Atur TAB & batch manual untuk kontrol penuh.<br/>💡 Contoh: 2500 file → 5 TAB x 500 file/tab")
-        opt_v_layout.addWidget(self.manual_helper)
-
-        # Row 4: Dynamic Helper (New Feature)
+        # Row 3: Dynamic Helper (New Feature)
         self.dynamic_helper = QLabel()
         self.dynamic_helper.setStyleSheet("""
             QLabel {
                 background-color: rgba(99, 102, 241, 0.1);
                 border: 1px solid #6366F1;
                 border-radius: 8px;
-                padding: 12px;
-                font-size: 12px;
+                padding: 8px;
+                font-size: 11px;
                 color: #E2E8F0;
             }
             QLabel::warning {
@@ -1903,23 +1890,14 @@ class MainWindow(QMainWindow):
         self.dynamic_helper.setWordWrap(True)
         opt_v_layout.addWidget(self.dynamic_helper)
         
-        # Row 5: Headless Mode Toggle
+        # Row 4: Headless Mode Toggle
         self.chk_headless = QCheckBox("🖥️ Mode Headless (Tanpa Tampilan Browser)")
         self.chk_headless.setProperty("class", "pill_pro")
         self.chk_headless.setToolTip("Jalankan browser tanpa tampilan, hemat RAM/CPU tapi tidak bisa melihat proses secara langsung")
         self.chk_headless.setChecked(False)
         self.chk_headless.setFocusPolicy(Qt.NoFocus)
         
-        headless_helper = QLabel("💡 Manfaat: Hemat RAM (30-50%), hemat CPU, hemat baterai (laptop) | ⚠️ Catatan: Tidak bisa melihat browser secara langsung, resiko terdeteksi bot lebih tinggi!")
-        headless_helper.setStyleSheet("color: #60A5FA; font-size: 11px; font-style: italic;")
-        headless_helper.setWordWrap(True)
-        
-        headless_row = QVBoxLayout()
-        headless_row.setSpacing(8)
-        headless_row.addWidget(self.chk_headless)
-        headless_row.addWidget(headless_helper)
-        
-        opt_v_layout.addLayout(headless_row)
+        opt_v_layout.addWidget(self.chk_headless)
 
         grid.addWidget(self.opt_card, 7, 0, 1, 2)
 
@@ -4349,11 +4327,20 @@ class MainWindow(QMainWindow):
             self.price_input.setText(preset["price"])
         if preset.get("description"):
             self.desc_input.setText(preset["description"])
-        if preset.get("location") and hasattr(self, "location_display_lbl"):
-            # Update display location
-            self.location_display_lbl.setText(f"Lokasi: {preset['location']}")
-        if preset.get("fototree"):
+        
+        # Enforce mutual exclusion: prioritize fototree if both are set
+        use_fototree = bool(preset.get("fototree"))
+        use_location = bool(preset.get("location")) and not use_fototree
+
+        if use_fototree:
             self._set_fototree_value(preset["fototree"], locked=False, persist=False)
+        elif use_location:
+            # Update both location_input AND display
+            self.location_input.blockSignals(True)
+            self.location_input.setText(preset["location"])
+            self.location_input.blockSignals(False)
+            if hasattr(self, "location_display_lbl"):
+                self.location_display_lbl.setText(f"Lokasi: {preset['location']}")
         
         self.log_message(f"✅ Preset '{preset['name']}' diterapkan!")
 
@@ -4415,6 +4402,8 @@ class MainWindow(QMainWindow):
         # Refresh failed badge after engine finishes
         self.update_failed_badge()
         self._refresh_setup_metadata_ui()
+        # Refresh preset combo box after setup or any operation
+        self._load_presets_to_combo()
         # Hide progress card after some delay or keep it to show result
         # self.progress_card.setVisible(False)
         self._eta_start_time = None

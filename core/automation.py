@@ -1811,8 +1811,40 @@ class TabAutomation:
                 requested_tree = self._normalize_text_value(self._resolved_tree or self.fototree_keyword or self.fototree or "")
                 requested_location = self._normalize_text_value(self._resolved_location or self.location_keyword or self.location or "")
 
-                # USER FIX: Clear existing location/tree before filling (Isi salah satu)
-                # PENTING: Jika data berasal dari Setup, pastikan kita benar-benar mengosongkan dropdown lama
+                # Check if FotoTree/Lokasi is already correctly filled before clearing!
+                tree_already_correct = False
+                location_already_correct = False
+
+                if requested_tree:
+                    try:
+                        tree_input = self.page.locator(SELECTORS["tree_search"]).first
+                        if tree_input.count() > 0:
+                            current_tree = tree_input.input_value() or tree_input.text_content() or ""
+                            if self._normalize_search_text(current_tree) == self._normalize_search_text(requested_tree):
+                                tree_already_correct = True
+                    except Exception:
+                        pass
+
+                if requested_location:
+                    try:
+                        loc_trigger = self.page.locator(SELECTORS["loc_trigger"]).first
+                        current_val = loc_trigger.input_value() or loc_trigger.text_content() or ""
+                        is_coords = "lat:" in current_val.lower() and "lng:" in current_val.lower()
+                        if current_val.strip() and (is_coords or self._normalize_search_text(current_val) == self._normalize_search_text(requested_location)):
+                            location_already_correct = True
+                    except Exception:
+                        pass
+
+                if (requested_tree and tree_already_correct) or (requested_location and location_already_correct):
+                    if tree_already_correct:
+                        self.log(f"✅ FotoTree sudah terisi: {requested_tree}")
+                    if location_already_correct:
+                        self.log(f"✅ Lokasi sudah terisi: {requested_location}")
+                    self.state = AutoState.SUBMIT
+                    self.state_start_time = time.time()
+                    return True
+
+                # USER FIX: Clear existing location/tree only if not already correct
                 if requested_tree or requested_location:
                     self._clear_shared_tree_location_value()
                     self.page.wait_for_timeout(1000)
