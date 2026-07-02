@@ -1156,17 +1156,26 @@ class TabAutomation:
 
         # DETEKSI DINI: Jika page sudah tertutup atau browser terputus, langsung stop
         try:
-            if not self.page or self.page.is_closed():
+            if not self.page:
                 self.is_running = False
                 return False
+            # Cek is_closed() dengan aman
+            try:
+                if self.page.is_closed():
+                    self.is_running = False
+                    return False
+            except:
+                pass  # Jangan stop tab hanya karena pengecekan is_closed gagal
             
             # Tambahan cek koneksi browser untuk persistent context
-            if not self.page.context or not self.page.context.pages:
-                self.is_running = False
-                return False
+            try:
+                if not self.page.context or not self.page.context.pages:
+                    self.is_running = False
+                    return False
+            except:
+                pass  # Jangan stop tab hanya karena pengecekan context gagal
         except:
-            self.is_running = False
-            return False
+            pass  # Jangan stop tab karena exception di pengecekan awal
 
         # Tutup modal pengganggu di setiap langkah
         self._check_and_close_modals()
