@@ -210,6 +210,12 @@ class AutomationWorker(QThread):
             
     def _run_internal(self):
         print(f"[Worker] Thread started. Mode: {self.mode}")
+        # Configure Playwright browser path first
+        try:
+            from core.playwright_runtime import configure_playwright_browser_path
+            configure_playwright_browser_path()
+        except Exception as e:
+            print(f"[Worker] Warning: configure_playwright_browser_path() failed: {e}")
         # HARD LICENSE CHECK - STARTUP
         app_type = self.config.get('app_type', 'pro')
         is_valid, status, _, _ = check_license(app_type=app_type)
@@ -321,6 +327,7 @@ class AutomationWorker(QThread):
                     }
 
                 # PRIORITAS: Langsung gunakan Chromium internal (Portable) - VERSI STABIL!
+                self.context = None
                 try:
                     self.log_signal.emit("Membuka browser...")
                     print("[Worker] Attempting Chromium (internal)...")
@@ -341,6 +348,10 @@ class AutomationWorker(QThread):
                     err_msg = str(e).split("\n")[0]
                     print(f"[Worker] Chromium (internal) failed: {e}")
                     self.log_signal.emit(f"⚠️ Browser internal gagal: {err_msg[:50]}...")
+                    self.context = None
+                    
+                    import time
+                    time.sleep(0.5)  # Small delay to clean up resources
                     
                     # FALLBACK 1: Jika Chromium internal tidak ada, coba Google Chrome PC
                     try:
@@ -351,6 +362,9 @@ class AutomationWorker(QThread):
                         self.context = p.chromium.launch_persistent_context(**args)
                     except Exception as e2:
                         print(f"[Worker] Google Chrome failed: {e2}")
+                        self.context = None
+                        
+                        time.sleep(0.5)  # Small delay to clean up resources
                         
                         # FALLBACK 2: Gunakan Edge
                         try:
@@ -364,6 +378,7 @@ class AutomationWorker(QThread):
                             error_msg3 = str(e3).split('\n')[0]
                             self.log_signal.emit(f"❌ CRITICAL ERROR: Browser tidak ditemukan ({error_msg3})")
                             self.log_signal.emit("Pastikan Google Chrome atau Microsoft Edge sudah terinstal.")
+                            self.context = None
                             self.finished_signal.emit()
                             return
 
