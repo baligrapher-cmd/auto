@@ -326,60 +326,56 @@ class AutomationWorker(QThread):
                         "timeout": 120000 
                     }
 
-                # PRIORITAS: Langsung gunakan Chromium internal (Portable) - VERSI STABIL!
+                # Prioritas: Gunakan Chrome/Edge terlebih dahulu (tidak biru), baru bundled Chromium
                 self.context = None
                 try:
                     self.log_signal.emit("Membuka browser...")
-                    print("[Worker] Attempting Chromium (internal)...")
                     
-                    # PRIORITAS: Gunakan executable internal jika ditemukan
-                    internal_exe = find_executable()
-                    if internal_exe:
-                        print(f"[Worker] Launching internal chromium: {internal_exe}")
-                        self.log_signal.emit(f"Memuat browser internal...")
-                        
-                        args = get_base_launch_args()
-                        args["executable_path"] = internal_exe
-                        self.context = p.chromium.launch_persistent_context(**args)
-                    else:
-                        print("[Worker] No internal chromium found, using default launch.")
-                        self.context = p.chromium.launch_persistent_context(**get_base_launch_args())
-                except Exception as e:
-                    err_msg = str(e).split("\n")[0]
-                    print(f"[Worker] Chromium (internal) failed: {e}")
-                    self.log_signal.emit(f"⚠️ Browser internal gagal: {err_msg[:50]}...")
-                    self.context = None
-                    
-                    time.sleep(0.5)  # Small delay to clean up resources
-                    
-                    # FALLBACK 1: Jika Chromium internal tidak ada, coba Google Chrome PC
+                    # PRIORITAS 1: Coba Google Chrome (jika ada di sistem)
                     try:
-                        self.log_signal.emit("Mencoba Google Chrome...")
-                        print("[Worker] Attempting Google Chrome...")
+                        print("[Worker] Attempting Google Chrome (system)...")
+                        self.log_signal.emit(f"Memuat Google Chrome...")
                         args = get_base_launch_args()
                         args["channel"] = "chrome"
                         self.context = p.chromium.launch_persistent_context(**args)
-                    except Exception as e2:
-                        print(f"[Worker] Google Chrome failed: {e2}")
+                    except Exception as chrome_err:
+                        print(f"[Worker] Google Chrome not available: {chrome_err}")
                         self.context = None
+                        time.sleep(0.2)
                         
-                        time.sleep(0.5)  # Small delay to clean up resources
-                        
-                        # FALLBACK 2: Gunakan Edge
+                        # PRIORITAS 2: Coba Microsoft Edge (jika ada di sistem)
                         try:
-                            self.log_signal.emit("Mencoba Microsoft Edge...")
-                            print("[Worker] Attempting Microsoft Edge...")
+                            print("[Worker] Attempting Microsoft Edge (system)...")
+                            self.log_signal.emit(f"Memuat Microsoft Edge...")
                             args = get_base_launch_args()
                             args["channel"] = "msedge"
                             self.context = p.chromium.launch_persistent_context(**args)
-                        except Exception as e3:
-                            print(f"[Worker] All browser fallbacks failed: {e3}")
-                            error_msg3 = str(e3).split('\n')[0]
-                            self.log_signal.emit(f"❌ CRITICAL ERROR: Browser tidak ditemukan ({error_msg3})")
-                            self.log_signal.emit("Pastikan Google Chrome atau Microsoft Edge sudah terinstal.")
+                        except Exception as edge_err:
+                            print(f"[Worker] Microsoft Edge not available: {edge_err}")
                             self.context = None
-                            self.finished_signal.emit()
-                            return
+                            time.sleep(0.2)
+                            
+                            # PRIORITAS 3: Gunakan bundled Chromium (internal)
+                            print("[Worker] Attempting bundled Chromium...")
+                            self.log_signal.emit(f"Memuat browser internal...")
+                            
+                            internal_exe = find_executable()
+                            if internal_exe:
+                                print(f"[Worker] Launching internal chromium: {internal_exe}")
+                                args = get_base_launch_args()
+                                args["executable_path"] = internal_exe
+                                self.context = p.chromium.launch_persistent_context(**args)
+                            else:
+                                print("[Worker] No internal chromium found, using default launch.")
+                                self.context = p.chromium.launch_persistent_context(**get_base_launch_args())
+                except Exception as e:
+                    err_msg = str(e).split("\n")[0]
+                    print(f"[Worker] All browsers failed: {e}")
+                    self.log_signal.emit(f"❌ CRITICAL ERROR: Browser tidak ditemukan ({err_msg})")
+                    self.log_signal.emit("Pastikan Google Chrome atau Microsoft Edge sudah terinstal.")
+                    self.context = None
+                    self.finished_signal.emit()
+                    return
 
                 # Ensure context is valid
                 if not self.context:
