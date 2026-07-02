@@ -1046,16 +1046,26 @@ class AutomationWorker(QThread):
                     self.context.browser.on("disconnected", on_browser_disconnected)
 
                 while self._is_running:
-                    # CEK APAKAH BROWSER MASIH ADA (PENTING!)
-                    if not self.context or not self.context.browser or not self.context.browser.is_connected():
-                        self._is_running = False
-                        break
-                    
+                    # CEK APAKAH BROWSER MASIH ADA (PENTING!) — tapi dengan pengecekan lebih aman)
+                    browser_ok = True
                     try:
-                        if len(self.context.pages) == 0:
-                            self._is_running = False
-                            break
+                        if not self.context or not self.context.browser:
+                            browser_ok = False
+                        else:
+                            try:
+                                if not self.context.browser.is_connected():
+                                    browser_ok = False
+                            except:
+                                pass  # Jangan berhenti jika pengecekan is_connected gagal
                     except:
+                        pass
+                    if browser_ok:
+                            try:
+                                if len(self.context.pages) == 0:
+                                    browser_ok = False
+                            except:
+                                pass
+                    if not browser_ok:
                         self._is_running = False
                         break
 
@@ -1070,12 +1080,30 @@ class AutomationWorker(QThread):
                             # CEK PAGE CLOSED/CRASH sebelum run_step
                             try:
                                 # Jika browser sudah disconnected, is_closed() akan throw error
-                                if not self.context or not self.context.browser or not self.context.browser.is_connected():
+                                browser_ok = True
+                                try:
+                                    if not self.context or not self.context.browser:
+                                        browser_ok = False
+                                    else:
+                                        try:
+                                            if not self.context.browser.is_connected():
+                                                browser_ok = False
+                                        except:
+                                            pass
+                                except:
+                                    pass
+                                if not browser_ok:
                                     self._is_running = False
                                     tab.is_running = False
                                     break
 
-                                if tab.page.is_closed():
+                                page_closed = False
+                                try:
+                                    if tab.page.is_closed():
+                                        page_closed = True
+                                except:
+                                    pass  # Jangan anggap crash jika pengecekan is_closed gagal
+                                if page_closed:
                                     self._crash_count += 1
                                     self._save_crash_recovery_state()
                                     if self._crash_count <= self._max_crash_recovery:
