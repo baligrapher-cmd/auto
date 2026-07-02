@@ -59,15 +59,15 @@ def get_playwright_browser_candidates():
             meipass = getattr(sys, "_MEIPASS", "")
             exe_dir = os.path.dirname(os.path.abspath(sys.executable))
             
-            # 1. Lokasi di dalam folder _internal (Windows/One-Dir)
+            # 1. Lokasi di dalam folder _internal (Windows/One-Dir) - PRIORITAS PERTAMA
             if meipass:
-                candidates.append(os.path.join(meipass, "browsers"))
                 candidates.append(os.path.join(meipass, "pw-browsers"))
+                candidates.append(os.path.join(meipass, "browsers"))
             candidates.extend([
-                os.path.join(exe_dir, "_internal", "browsers"),
-                os.path.join(exe_dir, "_internal", "pw-browsers"),
-                os.path.join(exe_dir, "browsers"),
                 os.path.join(exe_dir, "pw-browsers"),
+                os.path.join(exe_dir, "browsers"),
+                os.path.join(exe_dir, "_internal", "pw-browsers"),
+                os.path.join(exe_dir, "_internal", "browsers"),
             ])
             
             # 2. Khusus macOS Bundle (.app)
@@ -77,29 +77,29 @@ def get_playwright_browser_candidates():
                 contents_dir = os.path.dirname(exe_dir) # Contents
                 res_dir = os.path.join(contents_dir, "Resources")
                 candidates.extend([
-                    os.path.join(res_dir, "browsers"),
                     os.path.join(res_dir, "pw-browsers"),
+                    os.path.join(res_dir, "browsers"),
                     # Backup: Kadang PyInstaller menaruh di MacOS itu sendiri
-                    os.path.join(exe_dir, "browsers"),
                     os.path.join(exe_dir, "pw-browsers"),
+                    os.path.join(exe_dir, "browsers"),
                 ])
         except Exception:
             pass
+    else:
+        # Jika bukan frozen (development), prioritaskan folder di project root
+        try:
+            argv0_dir = os.path.dirname(os.path.abspath(sys.argv[0])) if sys.argv else ""
+            cwd = os.path.abspath(".")
+            candidates.extend([
+                os.path.join(cwd, "pw-browsers"),
+                os.path.join(cwd, "browsers"),
+                os.path.join(argv0_dir, "pw-browsers"),
+                os.path.join(argv0_dir, "browsers"),
+            ])
+        except Exception:
+            pass
 
-    try:
-        # 3. Lokasi Development / CWD
-        argv0_dir = os.path.dirname(os.path.abspath(sys.argv[0])) if sys.argv else ""
-        cwd = os.path.abspath(".")
-        candidates.extend([
-            os.path.join(argv0_dir, "browsers"),
-            os.path.join(argv0_dir, "pw-browsers"),
-            os.path.join(cwd, "browsers"),
-            os.path.join(cwd, "pw-browsers"),
-        ])
-    except Exception:
-        pass
-
-    # 4. Lokasi default Playwright di sistem
+    # 3. Lokasi default Playwright di sistem - terakhir
     try:
         if sys.platform.startswith("win"):
             # Windows: %USERPROFILE%\AppData\Local\ms-playwright
