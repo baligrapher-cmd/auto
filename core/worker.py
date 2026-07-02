@@ -286,66 +286,60 @@ class AutomationWorker(QThread):
                 }
                 print(f"[Worker] Launch args: {launch_args}")
 
-                # PRIORITAS: SELALU gunakan Chromium bawaan (bundled), tidak fallback ke Chrome pengguna!
-                browser_launched = False
-                # Pertama coba configure_playwright_browser_path untuk set PLAYWRIGHT_BROWSERS_PATH
-                internal_browser_path = configure_playwright_browser_path()
-                internal_executable = find_executable()
-                print(f"[Worker] internal_executable found: {internal_executable}")
-                
-                # Buat list launch attempts dengan fallback strategy
-                launch_attempts = []
-                
-                # Attempt 1: Dengan explicit executable_path
-                if internal_browser_path and internal_executable:
-                    launch_attempts.append(
-                        ("Internal Chromium (PLAYWRIGHT_BROWSERS_PATH + explicit executable)", {"executable_path": internal_executable})
-                    )
-                
-                # Attempt 2: Hanya dengan PLAYWRIGHT_BROWSERS_PATH (tanpa executable_path)
-                if internal_browser_path:
-                    launch_attempts.append(
-                        ("Internal Chromium (PLAYWRIGHT_BROWSERS_PATH only)", {})
-                    )
-                
-                # Attempt 3: Coba cari Chrome/Edge sistem sebagai fallback terakhir
-                launch_attempts.append(
-                    ("System Chrome/Edge (fallback)", {})
-                )
-                
-                for browser_name, extra_args in launch_attempts:
-                    # Skip if the required argument isn't available
-                    if "executable_path" in extra_args and extra_args["executable_path"] is None:
-                        continue
+                # PRIORITAS: Langsung gunakan Chromium internal (Portable) - VERSI STABIL!
+                try:
+                    self.log_signal.emit("Membuka browser...")
+                    print("[Worker] Attempting Chromium (internal)...")
+                    
+                    # PRIORITAS: Gunakan executable internal jika ditemukan
+                    internal_exe = find_executable()
+                    if internal_exe:
+                        print(f"[Worker] Launching internal chromium: {internal_exe}")
+                        self.log_signal.emit(f"Memuat browser internal...")
                         
+                        self.context = p.chromium.launch_persistent_context(
+                            executable_path=internal_exe,
+                            **launch_args
+                        )
+                    else:
+                        print("[Worker] No internal chromium found, using default launch.")
+                        self.context = p.chromium.launch_persistent_context(**launch_args)
+                except Exception as e:
+                    err_msg = str(e).split("\n")[0]
+                    print(f"[Worker] Chromium (internal) failed: {e}")
+                    self.log_signal.emit(f"⚠️ Browser internal gagal: {err_msg[:50]}...")
+                    
+                    # Pastikan executable_path tidak mengganggu fallback
+                    launch_args.pop("executable_path", None)
+                    
+                    # FALLBACK 1: Jika Chromium internal tidak ada, coba Google Chrome PC
                     try:
-                        self.log_signal.emit(f"Membuka {browser_name}...")
-                        print(f"[Worker] Attempting {browser_name}...")
+                        self.log_signal.emit("Mencoba Google Chrome...")
+                        print("[Worker] Attempting Google Chrome...")
+                        self.context = p.chromium.launch_persistent_context(
+                            channel="chrome",
+                            **launch_args
+                        )
+                    except Exception as e2:
+                        print(f"[Worker] Google Chrome failed: {e2}")
+                        # Pastikan channel tidak mengganggu fallback berikutnya
+                        launch_args.pop("channel", None)
                         
-                        # Merge extra args into launch args
-                        current_launch_args = launch_args.copy()
-                        current_launch_args.update(extra_args)
-                        
-                        # Launch the browser
-                        self.context = p.chromium.launch_persistent_context(**current_launch_args)
-                        print(f"[Worker] Success: {browser_name} launched!")
-                        self.log_signal.emit(f"✅ {browser_name} berhasil dibuka!")
-                        browser_launched = True
-                        break
-                    except Exception as e:
-                        import traceback
-                        full_traceback = traceback.format_exc()
-                        print(f"[Worker] {browser_name} failed with full traceback:")
-                        print(full_traceback)
-                        err_msg = str(e)
-                        self.log_signal.emit(f"⚠️ {browser_name} gagal: {err_msg[:80]}...")
-                
-                if not browser_launched:
-                    self.log_signal.emit("❌ CRITICAL ERROR: Tidak dapat menemukan browser apapun!")
-                    self.log_signal.emit("Pastikan Google Chrome, Microsoft Edge, atau Playwright Chromium sudah terinstal.")
-                    self.log_signal.emit("Untuk menginstal Playwright Chromium, jalankan: playwright install chromium")
-                    self.finished_signal.emit()
-                    return
+                        # FALLBACK 2: Gunakan Edge
+                        try:
+                            self.log_signal.emit("Mencoba Microsoft Edge...")
+                            print("[Worker] Attempting Microsoft Edge...")
+                            self.context = p.chromium.launch_persistent_context(
+                                channel="msedge",
+                                **launch_args
+                            )
+                        except Exception as e3:
+                            print(f"[Worker] All browser fallbacks failed: {e3}")
+                            error_msg3 = str(e3).split('\n')[0]
+                            self.log_signal.emit(f"❌ CRITICAL ERROR: Browser tidak ditemukan ({error_msg3})")
+                            self.log_signal.emit("Pastikan Google Chrome atau Microsoft Edge sudah terinstal.")
+                            self.finished_signal.emit()
+                            return
 
                 # Ensure context is valid
                 if not self.context:
@@ -1111,7 +1105,6 @@ class AutomationWorker(QThread):
                         )
                         
                         if should_open:
-                            self.log_signal.emit(f"[DEBUG] Tab terakhir selesai kompres, buka tab {current_tabs + 1}")
                             # Set flag bahwa tab baru akan dibuka, tab lama tidak boleh ambil lock
                             global_lock['waiting_new_tab'] = True
                             
@@ -1146,7 +1139,6 @@ class AutomationWorker(QThread):
                                 tab_baru_id = index + 1
                                 global_lock['waiting_new_tab'] = True
                                 global_lock['next_tab_id'] = tab_baru_id
-                                self.log_signal.emit(f"[DEBUG] Memberikan lock ke tab {tab_baru_id}, waiting_new_tab aktif")
                                 
                                 new_tab = TabAutomation(
                                     tab_id=tab_baru_id,
@@ -1164,7 +1156,6 @@ class AutomationWorker(QThread):
                                 except Exception:
                                     pass
                                 # SET LOCK DAN FLAG SKIP KE SELECT_MODE!
-                                new_tab.log(f"[DEBUG] Tab {tab_baru_id} sudah punya lock, SKIP ke SELECT_MODE")
                                 new_tab.global_lock['injector'] = tab_baru_id
                                 new_tab.state = AutoState.SELECT_MODE
                                 new_tab.state_start_time = time.time()

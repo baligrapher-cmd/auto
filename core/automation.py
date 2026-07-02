@@ -1307,14 +1307,11 @@ class TabAutomation:
                     self.state = AutoState.DONE
                     return False
                 
-                self.log(f"[DEBUG] Tab {self.tab_id} di WAIT_QUEUE, lock: {self.global_lock.get('injector')}, waiting_new_tab: {self.global_lock.get('waiting_new_tab')}")
-                
                 # Prioritas: jika ada tab baru yang akan datang, tab baru didahulukan
                 if self.global_lock.get('waiting_new_tab'):
                     # HANYA TAB DENGAN ID next_tab_id YANG BOLEH MENGAMBIL LOCK!
                     next_tab_id = self.global_lock.get('next_tab_id')
                     if self.tab_id != next_tab_id:
-                        self.log(f"[DEBUG] Tab {self.tab_id} menunggu (bukan tab prioritas: {next_tab_id})")
                         if int(elapsed) % 30 == 0:
                              self.log(f"⏳ Menunggu antrian... (tab prioritas: {next_tab_id})")
                         
@@ -1336,14 +1333,12 @@ class TabAutomation:
                             pass
                         #endregion debug-point tab-next-compress-injector-acquire
                         
-                        self.log(f"[DEBUG] Tab {self.tab_id} (tab prioritas) mengambil lock!")
                         self.global_lock['injector'] = self.tab_id
                         self.global_lock['waiting_new_tab'] = False
                         self.global_lock['next_tab_id'] = None
                         self.state = AutoState.SELECT_MODE
                         self.state_start_time = time.time()
                     elif self.global_lock.get('injector') == self.tab_id:
-                        self.log(f"[DEBUG] Tab {self.tab_id} (tab prioritas) sudah punya lock, ke SELECT_MODE")
                         self.global_lock['waiting_new_tab'] = False
                         self.global_lock['next_tab_id'] = None
                         self.state = AutoState.SELECT_MODE
@@ -1374,12 +1369,10 @@ class TabAutomation:
                             pass
                         #endregion debug-point tab-next-compress-injector-acquire
                         
-                        self.log(f"[DEBUG] Tab {self.tab_id} mengambil lock!")
                         self.global_lock['injector'] = self.tab_id
                         self.state = AutoState.SELECT_MODE
                         self.state_start_time = time.time()
                     elif self.global_lock.get('injector') == self.tab_id:
-                        self.log(f"[DEBUG] Tab {self.tab_id} sudah punya lock, ke SELECT_MODE")
                         self.state = AutoState.SELECT_MODE
                         self.state_start_time = time.time()
                     else:
@@ -1690,7 +1683,6 @@ class TabAutomation:
                         self.log(f"✔ Konten siap.")
                     # Lepaskan lock segera setelah kompres selesai, agar tab lain bisa inject
                     if self.global_lock.get('injector') == self.tab_id:
-                        self.log(f"[DEBUG] Tab {self.tab_id} melepaskan lock!")
                         self.global_lock['injector'] = None
                     self.compression_done = True
                     self.first_compression_done = True  # First compression is done, never reset this!
