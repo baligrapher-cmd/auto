@@ -307,17 +307,18 @@ class AutomationWorker(QThread):
                         "--start-maximized",
                     ])
                 
-                launch_args = {
-                    "user_data_dir": user_data_dir,
-                    "headless": is_headless,
-                    "args": browser_args,
-                    "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" if is_macos else "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-                    "no_viewport": True,
-                    "permissions": ["geolocation"],
-                    "geolocation": {"latitude": -8.65, "longitude": 115.216667}, # Default Bali
-                    "timeout": 120000 
-                }
-                print(f"[Worker] Launch args: {launch_args}")
+                # Fungsi helper untuk membuat launch_args baru setiap kali
+                def get_base_launch_args():
+                    return {
+                        "user_data_dir": user_data_dir,
+                        "headless": is_headless,
+                        "args": browser_args,
+                        "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" if is_macos else "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                        "no_viewport": True,
+                        "permissions": ["geolocation"],
+                        "geolocation": {"latitude": -8.65, "longitude": 115.216667}, # Default Bali
+                        "timeout": 120000 
+                    }
 
                 # PRIORITAS: Langsung gunakan Chromium internal (Portable) - VERSI STABIL!
                 try:
@@ -330,42 +331,34 @@ class AutomationWorker(QThread):
                         print(f"[Worker] Launching internal chromium: {internal_exe}")
                         self.log_signal.emit(f"Memuat browser internal...")
                         
-                        self.context = p.chromium.launch_persistent_context(
-                            executable_path=internal_exe,
-                            **launch_args
-                        )
+                        args = get_base_launch_args()
+                        args["executable_path"] = internal_exe
+                        self.context = p.chromium.launch_persistent_context(**args)
                     else:
                         print("[Worker] No internal chromium found, using default launch.")
-                        self.context = p.chromium.launch_persistent_context(**launch_args)
+                        self.context = p.chromium.launch_persistent_context(**get_base_launch_args())
                 except Exception as e:
                     err_msg = str(e).split("\n")[0]
                     print(f"[Worker] Chromium (internal) failed: {e}")
                     self.log_signal.emit(f"⚠️ Browser internal gagal: {err_msg[:50]}...")
                     
-                    # Pastikan executable_path tidak mengganggu fallback
-                    launch_args.pop("executable_path", None)
-                    
                     # FALLBACK 1: Jika Chromium internal tidak ada, coba Google Chrome PC
                     try:
                         self.log_signal.emit("Mencoba Google Chrome...")
                         print("[Worker] Attempting Google Chrome...")
-                        self.context = p.chromium.launch_persistent_context(
-                            channel="chrome",
-                            **launch_args
-                        )
+                        args = get_base_launch_args()
+                        args["channel"] = "chrome"
+                        self.context = p.chromium.launch_persistent_context(**args)
                     except Exception as e2:
                         print(f"[Worker] Google Chrome failed: {e2}")
-                        # Pastikan channel tidak mengganggu fallback berikutnya
-                        launch_args.pop("channel", None)
                         
                         # FALLBACK 2: Gunakan Edge
                         try:
                             self.log_signal.emit("Mencoba Microsoft Edge...")
                             print("[Worker] Attempting Microsoft Edge...")
-                            self.context = p.chromium.launch_persistent_context(
-                                channel="msedge",
-                                **launch_args
-                            )
+                            args = get_base_launch_args()
+                            args["channel"] = "msedge"
+                            self.context = p.chromium.launch_persistent_context(**args)
                         except Exception as e3:
                             print(f"[Worker] All browser fallbacks failed: {e3}")
                             error_msg3 = str(e3).split('\n')[0]
